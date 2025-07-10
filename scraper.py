@@ -454,7 +454,10 @@ def scrape_jobs_from_website(driver: uc.Chrome, website_config: dict) -> list:
 
 
 def is_job_posting(
-    title: str, description: str, title_keywords: list, description_keywords: list
+    title: str,
+    description: str,
+    title_keywords: list[str],
+    description_keywords: list[str],
 ) -> bool:
     """
     Determines if a job posting is relevant based on predefined keywords in its title

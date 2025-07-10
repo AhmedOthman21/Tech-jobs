@@ -44,8 +44,10 @@ def process_scraped_jobs(
             if is_job_posting(
                 job.get("title", ""),
                 job.get("description", ""),
-                SCRAPER_SETTINGS["job_title_keywords"],
-                SCRAPER_SETTINGS["job_keywords"],
+                SCRAPER_SETTINGS[
+                    "job_title_keywords"
+                ],  # Ensure this is a list of strings
+                SCRAPER_SETTINGS["job_keywords"],  # Ensure this is a list of strings
             ):
                 new_relevant_jobs.append(job)
                 # Add to the set immediately to prevent duplicates within the same run
@@ -86,7 +88,11 @@ async def main():
         logger.info("DEBUG_MODE is ENABLED.")
 
     posted_jobs_file = SCRAPER_SETTINGS["posted_jobs_file"]
-    already_posted_links = load_posted_job_links(posted_jobs_file)
+    if isinstance(posted_jobs_file, list):
+        posted_jobs_file_path = posted_jobs_file[0]
+    else:
+        posted_jobs_file_path = posted_jobs_file
+    already_posted_links = load_posted_job_links(posted_jobs_file_path)
     logger.info(f"Loaded {len(already_posted_links)} previously posted job links.")
 
     all_scraped_jobs: List[Dict] = []
@@ -121,7 +127,7 @@ async def main():
         new_jobs_found = process_scraped_jobs(all_scraped_jobs, already_posted_links)
         logger.info(f"Found {len(new_jobs_found)} new relevant jobs.")
 
-        await notify_new_jobs(new_jobs_found, posted_jobs_file)
+        await notify_new_jobs(new_jobs_found, posted_jobs_file_path)
 
     except Exception as e:
         logger.critical(f"An unhandled error occurred in main: {e}", exc_info=True)
