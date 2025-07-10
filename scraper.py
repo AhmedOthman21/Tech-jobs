@@ -61,8 +61,9 @@ def get_selenium_driver(headers: dict):
         return driver
     except WebDriverException as e:
         logger.critical(
-            f"Failed to initialize Selenium driver: {e}. Verify Chromium installation, "
+            "Failed to initialize Selenium driver: %s. Verify Chromium installation, "
             "undetected-chromedriver compatibility, and system dependencies.",
+            e,
             exc_info=True,
         )
         raise  # Re-raise to halt execution if driver cannot be initialized
@@ -76,8 +77,8 @@ def get_selenium_driver(headers: dict):
 
 def parse_date_string(date_str: str, date_element=None) -> datetime:
     """
-    Parses a human-readable date string (e.g., '2 days ago', '1 hour ago', 'منذ 2 يوم')
-    or extracts from a datetime attribute if date_element is provided.
+    Parses a human-readable date string (e.g., '2 days ago', '1 hour ago',
+    'منذ 2 يوم') or extracts from a datetime attribute if date_element is provided.
     """
     date_str_lower = date_str.lower()
 
@@ -96,7 +97,8 @@ def parse_date_string(date_str: str, date_element=None) -> datetime:
     elif "yesterday" in date_str_lower:
         return datetime.now() - timedelta(days=1)
 
-    # Handle numerical relative times (e.g., "5 hours ago", "2 days ago", "30+ days ago")
+    # Handle numerical relative times (e.g., "5 hours ago", "2 days ago",
+    # "30+ days ago")
     # For English
     match_en = re.search(
         r"(\d+)\s+(minute|hour|day|week|month|year)s?\s+ago", date_str_lower
@@ -143,7 +145,8 @@ def parse_date_string(date_str: str, date_element=None) -> datetime:
             return datetime.now() - timedelta(minutes=value)
 
     # Handle month-day formats (e.g., "Jul 09") - assuming current year
-    # This might be less precise if the year isn't explicitly given and it's from previous year
+    # This might be less precise if the year isn't explicitly given and it's from
+    # previous year
     month_day_match = re.search(r"([A-Za-z]{3})\s+(\d{1,2})", date_str)
     if month_day_match:
         try:
@@ -170,8 +173,9 @@ def parse_date_string(date_str: str, date_element=None) -> datetime:
 
 def scrape_jobs_from_website(driver: uc.Chrome, website_config: dict) -> list:
     """
-    Navigates to a specified website and scrapes job postings based on its configuration.
-    Utilizes WebDriverWait for robust element location, accounting for dynamic content loading.
+    Navigates to a specified website and scrapes job postings based on its
+    configuration. Utilizes WebDriverWait for robust element location,
+    accounting for dynamic content loading.
     """
     jobs = []
     url = website_config["url"]
@@ -197,7 +201,8 @@ def scrape_jobs_from_website(driver: uc.Chrome, website_config: dict) -> list:
         job_cards = driver.find_elements(By.CSS_SELECTOR, job_card_selector)
         if not job_cards:
             logger.warning(
-                f"No job cards found using selector '{job_card_selector}' on {site_name}. This might indicate a selector issue or no jobs."
+                f"No job cards found using selector '{job_card_selector}' on "
+                f"{site_name}. This might indicate a selector issue or no jobs."
             )
             return []
 
@@ -220,10 +225,12 @@ def scrape_jobs_from_website(driver: uc.Chrome, website_config: dict) -> list:
                         link = link_element.get_attribute("href")
                     except NoSuchElementException:
                         logger.debug(
-                            f"Specific link element not found for job '{title}' on {site_name}. Trying title element href."
+                            f"Specific link element not found for job '{title}' on "
+                            f"{site_name}. Trying title element href."
                         )
                         link = title_element.get_attribute("href")
-                else:  # If no specific link_selector, try title_element or the card itself (e.g., Forasna)
+                else:  # If no specific link_selector, try title_element or the card
+                    # itself (e.g., Forasna)
                     link = title_element.get_attribute("href")
                     if (
                         not link and card.tag_name == "a"
@@ -232,7 +239,8 @@ def scrape_jobs_from_website(driver: uc.Chrome, website_config: dict) -> list:
 
                 if not link:
                     logger.warning(
-                        f"Could not find link for job '{title}' on {site_name}. Skipping this job."
+                        f"Could not find link for job '{title}' on {site_name}. "
+                        "Skipping this job."
                     )
                     continue  # Skip this job if no link is found
 
@@ -245,7 +253,8 @@ def scrape_jobs_from_website(driver: uc.Chrome, website_config: dict) -> list:
                         description = description_element.text.strip()
                     except NoSuchElementException:
                         logger.debug(
-                            f"Description not found for job '{title}' on {site_name}. Skipping description extraction."
+                            f"Description not found for job '{title}' on {site_name}. "
+                            "Skipping description extraction."
                         )
 
                 # 4. Extract Tags
@@ -259,7 +268,8 @@ def scrape_jobs_from_website(driver: uc.Chrome, website_config: dict) -> list:
                         ]
                     except NoSuchElementException:
                         logger.debug(
-                            f"Tags not found for job '{title}' on {site_name}. Skipping tag extraction."
+                            f"Tags not found for job '{title}' on {site_name}. "
+                            "Skipping tag extraction."
                         )
 
                 # 5. Extract Date
@@ -272,11 +282,13 @@ def scrape_jobs_from_website(driver: uc.Chrome, website_config: dict) -> list:
                         )
                     except NoSuchElementException:
                         logger.debug(
-                            f"Posted date not found for job '{title}' on {site_name}. Defaulting to current time."
+                            f"Posted date not found for job '{title}' on {site_name}. "
+                            "Defaulting to current time."
                         )
                     except Exception as e:
                         logger.warning(
-                            f"Error parsing date for job '{title}' on {site_name}: {e}. Defaulting to current time."
+                            f"Error parsing date for job '{title}' on {site_name}: {e}. "
+                            "Defaulting to current time."
                         )
 
                 jobs.append(
@@ -293,17 +305,22 @@ def scrape_jobs_from_website(driver: uc.Chrome, website_config: dict) -> list:
 
             except NoSuchElementException as e:
                 logger.warning(
-                    f"Skipping job card {i+1} on {site_name} due to missing core element (e.g., title): {e}. Card HTML might be malformed or selectors are incorrect for this specific card."
+                    f"Skipping job card {i+1} on {site_name} due to missing core "
+                    f"element (e.g., title): {e}. Card HTML might be malformed or "
+                    "selectors are incorrect for this specific card."
                 )
             except Exception as e:
                 logger.warning(
-                    f"An unexpected error occurred while processing job card {i+1} on {site_name}: {e}",
+                    f"An unexpected error occurred while processing job card {i+1} on "
+                    f"{site_name}: {e}",
                     exc_info=True,
                 )
 
     except TimeoutException:
         logger.error(
-            f"Timeout while loading or finding elements on {site_name} ({url}). Page might not have loaded correctly or selectors are invalid after 40 seconds."
+            f"Timeout while loading or finding elements on {site_name} ({url}). "
+            "Page might not have loaded correctly or selectors are invalid after "
+            "40 seconds."
         )
     except WebDriverException as e:
         logger.error(f"WebDriver error during scraping {site_name}: {e}", exc_info=True)
@@ -321,8 +338,8 @@ def is_job_posting(
     title: str, description: str, title_keywords: list, description_keywords: list
 ) -> bool:
     """
-    Determines if a job posting is relevant based on predefined keywords in its title and description.
-    Performs case-insensitive matching for robustness.
+    Determines if a job posting is relevant based on predefined keywords in its title
+    and description. Performs case-insensitive matching for robustness.
     """
     title_lower = title.lower()
     description_lower = (
