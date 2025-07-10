@@ -1,0 +1,73 @@
+name: Job Scraper CI/CD
+
+on:
+  push:
+    branches:
+      - main 
+  schedule:
+    # Run every day at 02:00 AM UTC (adjust as needed using cron syntax)
+    # Check cron schedule format: https://crontab.guru/
+    # E.g., for 5:00 AM EEST (UTC+3), it would be 02:00 UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        description: 'Run with debug logging enabled?'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  scrape_and_notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx (Optional, for better Docker builds)
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Posted Jobs File
+        id: cache-posted-jobs
+        uses: actions/cache@v4
+        with:
+          path: posted_jobs.txt
+          key: ${{ runner.os }}-posted-jobs
+          restore-keys: |
+            ${{ runner.os }}-posted-jobs
+
+      - name: Build and run Docker container
+        run: |
+          # Build the Docker image
+          docker build -t job-scraper .
+
+          # Define the path for the posted_jobs.txt inside the container,
+          # and the path on the host that we'll mount.
+          CONTAINER_POSTED_JOBS_PATH="/app/posted_jobs.txt"
+          HOST_POSTED_JOBS_PATH="${{ github.workspace }}/posted_jobs.txt"
+
+          # Run the Docker container
+          # -e: Pass environment variables (secrets)
+          # -v: Mount the cached 'posted_jobs.txt' file from the host into the container
+          #     This ensures persistence of the posted links across workflow runs.
+          # --name: Give the container a name for easier management/logs
+          # --rm: Automatically remove the container when it exits
+          docker run --rm \
+            --name devops-job-scraper \
+            -e TELEGRAM_BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}" \
+            -e TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -e POSTED_JOBS_FILE="${CONTAINER_POSTED_JOBS_PATH}" \
+            -v "${HOST_POSTED_JOBS_PATH}:${CONTAINER_POSTED_JOBS_PATH}" \
+            job-scraper
+
+      - name: Upload Logs (Optional, for debugging)
+        if: always() # Run even if previous steps fail
+        uses: actions/upload-artifact@v4
+        with:
+          name: scraper-logs
+          path: |
+            main.log # If you configure your script to write to a log file
+            # You might need to configure Python logging to write to a file,
+            # or capture Docker container logs more directly.
+            # For now, all output goes to stdout/stderr and is captured by GH Actions.
