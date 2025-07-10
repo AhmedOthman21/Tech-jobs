@@ -9,10 +9,18 @@ from selenium.common.exceptions import (
     WebDriverException,
     TimeoutException,
     NoSuchElementException,
+    # Add other common Selenium exceptions you might encounter during network issues
+    # e.g., StaleElementReferenceException, ElementNotInteractableException
 )
-from selenium.webdriver.remote.webelement import (
-    WebElement,
-)  # Moved this import to the top
+from selenium.webdriver.remote.webelement import WebElement
+
+# Import tenacity
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+)
 
 
 # Configure logging for the scraper module
@@ -311,6 +319,18 @@ def _extract_job_details_from_card(
         return None
 
 
+@retry(
+    stop=stop_after_attempt(3),  # Try up to 3 times
+    wait=wait_exponential(multiplier=1, min=4, max=10),  # Wait 4s, 8s, then 10s max
+    retry=retry_if_exception_type((TimeoutException, WebDriverException)),
+)
+def _safe_driver_get(driver: uc.Chrome, url: str):
+    """Wrapper for driver.get() with retry logic."""
+    logger.info(f"Attempting to navigate to {url}")
+    driver.get(url)
+    logger.info(f"Successfully navigated to {url}")
+
+
 def scrape_jobs_from_website(driver: uc.Chrome, website_config: dict) -> list:
     """
     Navigates to a specified website and scrapes job postings based on its
@@ -324,7 +344,8 @@ def scrape_jobs_from_website(driver: uc.Chrome, website_config: dict) -> list:
 
     logger.info(f"Visiting {site_name} ({url}) to scrape job postings.")
     try:
-        driver.get(url)
+        # Use the retried safe_driver_get function
+        _safe_driver_get(driver, url)
 
         WebDriverWait(driver, 40).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, job_card_selector))

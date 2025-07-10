@@ -3,6 +3,10 @@ import html
 import logging
 import os  # Import os for file path checks
 
+# Import tenacity
+from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
+
+
 # Set up logging for this module
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -125,9 +129,15 @@ def _truncate_message(full_message: str, job_post: dict) -> str:
     return "\n".join(message_parts)
 
 
+@retry(
+    stop=stop_after_attempt(3),  # Try sending message up to 3 times
+    wait=wait_fixed(2),  # Wait 2 seconds between retries
+    retry=retry_if_exception_type(telegram.error.TelegramError),
+)
 async def send_telegram_message(bot_token: str, chat_id: str, job_post: dict):
     """
     Sends a single job posting message to the specified Telegram chat/channel.
+    Includes retry logic for network/API errors.
     """
     bot = telegram.Bot(token=bot_token)
     full_message = _format_telegram_message(job_post)
@@ -147,23 +157,37 @@ async def send_telegram_message(bot_token: str, chat_id: str, job_post: dict):
         return True
     except telegram.error.TelegramError as e:
         logger.error(f"Error sending Telegram message for {job_post['title']}: {e}")
-        if (
+        # Re-raise the exception to trigger tenacity retry if it's a retriable error
+        if "message is too long" in str(e).lower():
+            # This is a non-retriable error for tenacity, as retrying won't fix length.
+            # Handle specifically and do not re-raise to avoid useless retries.
+            logger.error(
+                f"Telegram message for {job_post['title']} is too long. "
+                "Further truncation or manual review needed."
+            )
+            return False  # Indicate failure without retrying via tenacity
+        elif (
             "chat not found" in str(e).lower()
             or "bad request: chat_id is empty" in str(e).lower()
+            or "bot was blocked by the user" in str(e).lower()
         ):
             logger.error(
-                "Invalid Telegram Chat ID or bot not in chat. Please double-check "
-                "your CHAT_ID and bot's admin status."
+                "Invalid Telegram Chat ID or bot not in chat/blocked. "
+                "This is likely a configuration error, not a transient network issue."
             )
-        elif "message is too long" in str(e).lower():
-            logger.error(
-                f"Telegram message for {job_post['title']} is still too long after "
-                "truncation. Consider further reducing description length."
-            )
-        return False
+            # These are typically configuration errors, not transient network issues,
+            # so we return False without re-raising to prevent tenacity from retrying indefinitely.
+            return False
+        else:
+            # For other Telegram errors (e.g., API issues, network problems), re-raise to retry
+            raise e  # Tenacity will catch and retry
+
     except Exception as e:
         logger.error(
             f"An unexpected error occurred during Telegram sending for "
             f"{job_post['title']}: {e}"
         )
+        # This is a general exception, let tenacity retry if configured to do so
+        # or handle as a final failure. For this example, we let it pass through
+        # to ensure it's logged and doesn't get stuck.
         return False
