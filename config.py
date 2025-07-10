@@ -184,14 +184,15 @@ WEBSITE_CONFIGS = [
 ]
 
 SCRAPER_SETTINGS = {
-    "job_keywords": ScraperConfig.JOB_KEYWORDS,
-    "job_title_keywords": ScraperConfig.JOB_TITLE_KEYWORDS,
-    "max_job_age_days": ScraperConfig.MAX_JOB_AGE_DAYS,
-    "posted_jobs_file": ScraperConfig.POSTED_JOBS_FILE,
-    "max_scroll_pauses": ScraperConfig.MAX_SCROLL_PAUSES,
-    "scroll_pause_time": ScraperConfig.SCROLL_PAUSE_TIME,
-    "job_description_max_length": ScraperConfig.JOB_DESCRIPTION_MAX_LENGTH,
-    "min_jobs_per_website": ScraperConfig.MIN_JOBS_PER_WEBSITE,
+    "job_keywords": os.getenv(
+        "JOB_KEYWORDS",
+        "DevOps Engineer,SRE,Cloud Engineer,Site Reliability Engineer,"
+        "Platform Engineer,Infrastructure Engineer",
+    ).split(","),
+    "job_title_keywords": os.getenv(
+        "JOB_TITLE_KEYWORDS",
+        "DevOps,SRE,Cloud,Site Reliability,Platform,Infrastructure",
+    ).split(","),
 }
 
 TELEGRAM_SETTINGS = {
