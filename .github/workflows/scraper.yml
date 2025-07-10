@@ -56,10 +56,14 @@ jobs:
       - name: Check code linting with Flake8
         run: flake8 .
 
-      - name: Run MyPy static type checker 
+      # Install Mypy and run the type checks
+      - name: Install Mypy for type checking
+        run: pip install mypy
+
+      - name: Run Mypy static type checker
         run: mypy . --ignore-missing-imports
-
-
+        # This step will fail the workflow if there are type checking errors in the code.
+        
       - name: Run Pytest
         run: pytest
 
