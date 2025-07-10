@@ -68,8 +68,8 @@ jobs:
           context: . # Specifies the build context as the current directory.
           push: true # Instructs the action to push the built image to Docker Hub.
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/devops-job-scraper:latest # 'latest' tag for the most recent build.
-            ${{ secrets.DOCKERHUB_USERNAME }}/devops-job-scraper:${{ github.sha }} # Tagged with commit SHA for immutability and traceability.
+            ${{ secrets.DOCKERHUB_USERNAME && format('{0}/devops-job-scraper:latest', secrets.DOCKERHUB_USERNAME) }}
+            ${{ secrets.DOCKERHUB_USERNAME && format('{0}/devops-job-scraper:{1}', secrets.DOCKERHUB_USERNAME, github.sha) }}
           # Leverages GitHub Actions cache for Docker layer caching, significantly speeding up subsequent builds.
           cache-from: type=gha,scope=build
           cache-to: type=gha,scope=build,mode=max
