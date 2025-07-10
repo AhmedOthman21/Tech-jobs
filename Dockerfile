@@ -1,6 +1,6 @@
-# Base image selection: python:3.10-slim-bullseye provides a minimal Debian environment
+# Base image selection: python:3.10-slim-bookworm provides a minimal Debian environment
 # with Python installed, suitable for smaller and more secure container images.
-FROM python:3.10-slim-bullseye
+FROM python:3.10-slim-bookworm
 
 # Set the working directory for the application inside the container.
 # All subsequent commands will operate relative to this directory.
