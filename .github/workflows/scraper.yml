@@ -56,6 +56,13 @@ jobs:
       - name: Check code linting with Flake8
         run: flake8 .
 
+      - name: Run MyPy static type checker 
+        run: mypy . --ignore-missing-imports
+
+
+      - name: Run Pytest
+        run: pytest
+
       - name: Cache Posted Jobs File
         # Caches the 'posted_jobs.txt' file across workflow runs. This is critical for
         # maintaining the history of sent jobs and preventing duplicate notifications.
