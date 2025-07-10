@@ -36,6 +36,26 @@ jobs:
         # Uses a standard action to clone the repository, making code available to subsequent steps.
         uses: actions/checkout@v4
 
+      # --- NEW STEPS FOR CODE QUALITY CHECKS ---
+      - name: Set up Python for formatting/linting checks
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11' # Specify your exact Python version, e.g., '3.9', '3.10', '3.11', '3.12'
+
+      - name: Install Black for formatting check
+        run: pip install black
+
+      - name: Check code formatting with Black
+        run: black . --check
+        # This step will fail the workflow if the code is not formatted according to Black's rules.
+        # This ensures consistent code style before building the Docker image.
+
+      - name: Install Flake8 for linting check
+        run: pip install flake8
+
+      - name: Check code linting with Flake8
+        run: flake8 .
+
       - name: Cache Posted Jobs File
         # Caches the 'posted_jobs.txt' file across workflow runs. This is critical for
         # maintaining the history of sent jobs and preventing duplicate notifications.
