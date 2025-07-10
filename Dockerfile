@@ -46,6 +46,4 @@ COPY . .
 
 # Set environment variables for the Telegram Bot Token and Chat ID
 # These will be populated by GitHub Actions secrets or Docker run commands
-ENV TELEGRAM_BOT_TOKEN=""
-ENV TELEGRAM_CHAT_ID=""
 ENV POSTED_JOBS_FILE="posted_jobs.txt"
