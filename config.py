@@ -25,6 +25,41 @@ JOB_WEBSITES = [
         "tags_selector": "div.css-y4udm8 a[class^='css-'], div.css-y4udm8 span.eoyjyou0",
         "date_selector": "div.css-d7j1kk > div" # Robust against dynamic class names
     },
+    {
+        "name": "NaukriGulf",
+        "url": "https://www.naukrigulf.com/devops-jobs",
+        # Corrected based on your new HTML snippet
+        "job_card_selector": "div.ng-box.srp-tuple",
+        "title_selector": "a.info-position p.designation-title", # Title text is inside a <p> within the <a>
+        "link_selector": "a.info-position", # The href of this <a> is the job link
+        "description_selector": "p.description", # Short description snippet
+        "tags_selector": "", # No explicit tags in the provided snippet beyond exp/loc, so leaving empty
+        "date_selector": "span.foot span.time" # Date is inside <span class="time"> within <span class="foot">
+    },
+    {
+        "name": "Forasna",
+        "url": "https://forasna.com/%D9%88%D8%B8%D8%A7%D8%A6%D9%81-%D8%AE%D8%A7%D9%84%D9%8A%D8%A9?query=it", # Using 'devops' query
+        # The HTML snippet provided was too minimal (<a class="mobile-job-link"></a>)
+        # Sticking to previous desktop selectors which show a full job card,
+        # assuming Selenium will get a more complete page.
+        "job_card_selector": "a.job-card",
+        "title_selector": "h2.job-card__title",
+        "link_selector": "", # The job_card_selector itself is the link, so it will use its href
+        "description_selector": "div.job-card__skills",
+        "tags_selector": "div.job-card__skills span",
+        "date_selector": "span.job-card__date" # E.g., "منذ 2 يوم" (2 days ago) - requires Arabic date parsing
+    },
+    {
+        "name": "Bayt",
+        "url": "https://www.bayt.com/en/egypt/jobs/devops-jobs/",
+        # Corrected based on your new HTML snippet
+        "job_card_selector": "li.has-pointer-d", # Main container for each job listing
+        "title_selector": "h2.t-large a", # Title text is inside <a> within <h2 class="t-large">
+        "link_selector": "h2.t-large a", # The href of this <a> is the job link
+        "description_selector": "div.jb-descr", # Short description snippet
+        "tags_selector": "", # "div.tags-box a" was not present in the new snippet, leaving empty for now
+        "date_selector": "span[data-automation-id=\"job-active-date\"]" # Robust selector for the date span
+    },
     # Add more job websites here following the same structure
     # {
     #     "name": "ExampleJobs",
@@ -42,7 +77,7 @@ JOB_WEBSITES = [
 JOB_TITLE_KEYWORDS = [
     "DevOps", "SRE", "Site Reliability Engineer", "Cloud Engineer",
     "Kubernetes", "AWS DevOps", "Azure DevOps", "GCP DevOps",
-    "Infrastructure Engineer", "Automation Engineer"
+    "Infrastructure Engineer", "Automation Engineer", "IT", "system administrator",
 ]
 
 # Keywords used to filter job descriptions. Can be more specific technical skills.
@@ -51,7 +86,7 @@ JOB_KEYWORDS = [
     "Jenkins", "GitLab CI", "CI/CD", "Linux", "Scripting", "Python",
     "Bash", "Monitoring", "Prometheus", "Grafana", "ELK", "Splunk",
     "Microservices", "Containerization", "CloudFormation", "Helm", "ArgoCD",
-    "IaC", "Infrastructure as Code", "CI/CD Pipeline"
+    "IaC", "Infrastructure as Code", "CI/CD Pipeline", "IT", "system administrator"
 ]
 
 # --- WebDriver Configuration ---
