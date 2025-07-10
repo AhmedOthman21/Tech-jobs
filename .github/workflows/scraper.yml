@@ -70,7 +70,7 @@ jobs:
 
       # Install Selenium, Telegram, undetected_chromedriver, and Tenacity dependencies
       - name: Install dependencies for tests
-        run: pip install selenium python-telegram-bot undetected-chromedriver tenacity
+        run: pip install selenium python-telegram-bot undetected-chromedriver tenacity pytest-asyncio
 
       - name: Run Pytest
         run: pytest
