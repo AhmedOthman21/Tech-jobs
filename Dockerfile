@@ -70,3 +70,4 @@ ENV POSTED_JOBS_FILE="posted_jobs.txt"
 # CMD instruction is omitted here. The execution command will be explicitly defined
 # in the GitHub Actions workflow using `docker run` to provide maximum flexibility
 # for passing runtime arguments and mounting volumes.
+CMD ["python", "main.py"]
