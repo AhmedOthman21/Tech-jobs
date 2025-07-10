@@ -1,135 +1,197 @@
 import os
 from dotenv import load_dotenv
 
-# Load environment variables from a .env file (for local development).
-# In production/CI/CD, these values are typically injected directly as environment variables.
 load_dotenv()
 
-# --- Telegram Bot Configuration ---
-# Telegram bot token for API interaction. MUST be kept secret.
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-# Telegram chat ID where job notifications will be sent. Can be a channel or group ID.
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-# --- Job Search Criteria ---
-# List of job websites to scrape, each with its specific selectors.
-# This structure allows easy extension for new websites without code changes.
-JOB_WEBSITES = [
+class LoggerConfig:
+    """Configuration for logging."""
+
+    LOG_FILE_PATH = os.getenv("LOG_FILE_PATH", "job_scraper.log")
+    LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+
+
+class WebDriverConfig:
+    """Configuration for Selenium WebDriver."""
+
+    HEADLESS_MODE = os.getenv("HEADLESS_MODE", "True").lower() == "true"
+    DEFAULT_TIMEOUT_SECONDS = int(os.getenv("DEFAULT_TIMEOUT_SECONDS", 30))
+    PAGE_LOAD_TIMEOUT_SECONDS = int(os.getenv("PAGE_LOAD_TIMEOUT_SECONDS", 60))
+    DRIVER_PATH = os.getenv("DRIVER_PATH")  # Optional, if using specific driver location
+
+
+class WebsiteConfig:
+    """Configuration for job scraping websites."""
+
+    # Wuzzuf configuration (from previous successful scrapes)
+    WUZZUF_URL = os.getenv("WUZZUF_URL", "https://wuzzuf.net/a/devops-jobs-in-egypt")
+    WUZZUF_JOB_CARD_SELECTOR = os.getenv(
+        "WUZZUF_JOB_CARD_SELECTOR", "div.css-1gatmva.e1v1l3u10"
+    )
+    WUZZUF_TITLE_SELECTOR = os.getenv("WUZZUF_TITLE_SELECTOR", "h2.css-m604qf a")
+    WUZZUF_LINK_SELECTOR = os.getenv("WUZZUF_LINK_SELECTOR", "h2.css-m604qf a")
+    WUZZUF_DESCRIPTION_SELECTOR = os.getenv(
+        "WUZZUF_DESCRIPTION_SELECTOR", "div.css-y4udm8"
+    )
+    WUZZUF_TAGS_SELECTOR = os.getenv(
+        "WUZZUF_TAGS_SELECTOR",
+        "div.css-y4udm8 a[class^='css-'], div.css-y4udm8 span.eoyjyou0",
+    )
+    WUZZUF_DATE_SELECTOR = os.getenv("WUZZUF_DATE_SELECTOR", "div.css-d7j1kk > div")
+
+    # NaukriGulf configuration
+    NAUKRIGULF_URL = os.getenv("NAUKRIGULF_URL", "https://www.naukrigulf.com/devops-jobs")
+    NAUKRIGULF_JOB_CARD_SELECTOR = os.getenv(
+        "NAUKRIGULF_JOB_CARD_SELECTOR", "div.ng-box.srp-tuple"
+    )
+    NAUKRIGULF_TITLE_SELECTOR = os.getenv(
+        "NAUKRIGULF_TITLE_SELECTOR", "a.info-position p.designation-title"
+    )
+    NAUKRIGULF_LINK_SELECTOR = os.getenv(
+        "NAUKRIGULF_LINK_SELECTOR", "a.info-position"
+    )
+    NAUKRIGULF_DESCRIPTION_SELECTOR = os.getenv(
+        "NAUKRIGULF_DESCRIPTION_SELECTOR", "p.description"
+    )
+    NAUKRIGULF_TAGS_SELECTOR = os.getenv("NAUKRIGULF_TAGS_SELECTOR", "")
+    NAUKRIGULF_DATE_SELECTOR = os.getenv(
+        "NAUKRIGULF_DATE_SELECTOR", "span.foot span.time"
+    )
+
+    # Forasna configuration
+    FORASNA_URL = os.getenv(
+        "FORASNA_URL",
+        "https://forasna.com/%D9%88%D8%B8%D8%A7%D8%A6%D9%81-%D8%AE%D8%A7%D9%84%D9%8A%D8%A9?query=devops",
+    )
+    FORASNA_JOB_CARD_SELECTOR = os.getenv("FORASNA_JOB_CARD_SELECTOR", "a.job-card")
+    FORASNA_TITLE_SELECTOR = os.getenv("FORASNA_TITLE_SELECTOR", "h2.job-card__title")
+    FORASNA_LINK_SELECTOR = os.getenv("FORASNA_LINK_SELECTOR", "")  # Card itself is link
+    FORASNA_DESCRIPTION_SELECTOR = os.getenv(
+        "FORASNA_DESCRIPTION_SELECTOR", "div.job-card__skills"
+    )
+    FORASNA_TAGS_SELECTOR = os.getenv("FORASNA_TAGS_SELECTOR", "div.job-card__skills span")
+    FORASNA_DATE_SELECTOR = os.getenv("FORASNA_DATE_SELECTOR", "span.job-card__date")
+
+    # Bayt configuration
+    BAYT_URL = os.getenv("BAYT_URL", "https://www.bayt.com/en/egypt/jobs/devops-jobs/")
+    BAYT_JOB_CARD_SELECTOR = os.getenv("BAYT_JOB_CARD_SELECTOR", "li.has-pointer-d")
+    BAYT_TITLE_SELECTOR = os.getenv("BAYT_TITLE_SELECTOR", "h2.t-large a")
+    BAYT_LINK_SELECTOR = os.getenv("BAYT_LINK_SELECTOR", "h2.t-large a")
+    BAYT_DESCRIPTION_SELECTOR = os.getenv("BAYT_DESCRIPTION_SELECTOR", "div.jb-descr")
+    BAYT_TAGS_SELECTOR = os.getenv("BAYT_TAGS_SELECTOR", "")
+    BAYT_DATE_SELECTOR = os.getenv(
+        "BAYT_DATE_SELECTOR", "span[data-automation-id=\"job-active-date\"]"
+    )
+
+
+class ScraperConfig:
+    """General configuration for the job scraper."""
+
+    JOB_KEYWORDS = os.getenv(
+        "JOB_KEYWORDS",
+        "DevOps Engineer,SRE,Cloud Engineer,Site Reliability Engineer,"
+        "Platform Engineer,Infrastructure Engineer",
+    ).split(",")
+    JOB_TITLE_KEYWORDS = os.getenv(
+        "JOB_TITLE_KEYWORDS",
+        "DevOps,SRE,Cloud,Site Reliability,Platform,Infrastructure",
+    ).split(",")
+
+    MAX_JOB_AGE_DAYS = int(os.getenv("MAX_JOB_AGE_DAYS", 1))
+    POSTED_JOBS_FILE = os.getenv("POSTED_JOBS_FILE", "posted_jobs.txt")
+    MAX_SCROLL_PAUSES = int(os.getenv("MAX_SCROLL_PAUSES", 5))
+    SCROLL_PAUSE_TIME = int(os.getenv("SCROLL_PAUSE_TIME", 2))
+    JOB_DESCRIPTION_MAX_LENGTH = int(os.getenv("JOB_DESCRIPTION_MAX_LENGTH", 100))
+    MIN_JOBS_PER_WEBSITE = int(os.getenv("MIN_JOBS_PER_WEBSITE", 10))
+
+
+class TelegramConfig:
+    """Configuration for Telegram notifications."""
+
+    TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+    TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
+
+class GeneralConfig:
+    """General application settings."""
+
+    DEBUG_MODE = os.getenv("DEBUG_MODE", "False").lower() == "true"
+    APP_VERSION = "1.0.0"
+
+
+# Grouping configurations for easier access
+LOGGER_SETTINGS = {
+    "log_file_path": LoggerConfig.LOG_FILE_PATH,
+    "log_level": LoggerConfig.LOG_LEVEL,
+}
+
+WEBDRIVER_SETTINGS = {
+    "headless_mode": WebDriverConfig.HEADLESS_MODE,
+    "default_timeout_seconds": WebDriverConfig.DEFAULT_TIMEOUT_SECONDS,
+    "page_load_timeout_seconds": WebDriverConfig.PAGE_LOAD_TIMEOUT_SECONDS,
+    "driver_path": WebDriverConfig.DRIVER_PATH,
+}
+
+WEBSITE_CONFIGS = [
     {
         "name": "Wuzzuf",
-        "url": "https://wuzzuf.net/a/devops-jobs-in-egypt",
-        "job_card_selector": "div.css-1gatmva.e1v1l3u10",  # Most specific and stable
-        "title_selector": "h2.css-m604qf a",
-        "link_selector": "h2.css-m604qf a",
-        "description_selector": "div.css-y4udm8",
-        "tags_selector": "div.css-y4udm8 a[class^='css-'], div.css-y4udm8 span.eoyjyou0",
-        "date_selector": "div.css-d7j1kk > div",  # Robust against dynamic class names
+        "url": WebsiteConfig.WUZZUF_URL,
+        "job_card_selector": WebsiteConfig.WUZZUF_JOB_CARD_SELECTOR,
+        "title_selector": WebsiteConfig.WUZZUF_TITLE_SELECTOR,
+        "link_selector": WebsiteConfig.WUZZUF_LINK_SELECTOR,
+        "description_selector": WebsiteConfig.WUZZUF_DESCRIPTION_SELECTOR,
+        "tags_selector": WebsiteConfig.WUZZUF_TAGS_SELECTOR,
+        "date_selector": WebsiteConfig.WUZZUF_DATE_SELECTOR,
     },
     {
         "name": "NaukriGulf",
-        "url": "https://www.naukrigulf.com/devops-jobs",
-        # Corrected based on your new HTML snippet
-        "job_card_selector": "div.ng-box.srp-tuple",
-        "title_selector": "a.info-position p.designation-title",  # Title text is inside a <p> within the <a>
-        "link_selector": "a.info-position",  # The href of this <a> is the job link
-        "description_selector": "p.description",  # Short description snippet
-        "tags_selector": "",  # No explicit tags in the provided snippet beyond exp/loc, so leaving empty
-        "date_selector": "span.foot span.time",  # Date is inside <span class="time"> within <span class="foot">
+        "url": WebsiteConfig.NAUKRIGULF_URL,
+        "job_card_selector": WebsiteConfig.NAUKRIGULF_JOB_CARD_SELECTOR,
+        "title_selector": WebsiteConfig.NAUKRIGULF_TITLE_SELECTOR,
+        "link_selector": WebsiteConfig.NAUKRIGULF_LINK_SELECTOR,
+        "description_selector": WebsiteConfig.NAUKRIGULF_DESCRIPTION_SELECTOR,
+        "tags_selector": WebsiteConfig.NAUKRIGULF_TAGS_SELECTOR,
+        "date_selector": WebsiteConfig.NAUKRIGULF_DATE_SELECTOR,
     },
     {
         "name": "Forasna",
-        "url": "https://forasna.com/%D9%88%D8%B8%D8%A7%D8%A6%D9%81-%D8%AE%D8%A7%D9%84%D9%8A%D8%A9?query=it",  # Using 'devops' query
-        # The HTML snippet provided was too minimal (<a class="mobile-job-link"></a>)
-        # Sticking to previous desktop selectors which show a full job card,
-        # assuming Selenium will get a more complete page.
-        "job_card_selector": "a.job-card",
-        "title_selector": "h2.job-card__title",
-        "link_selector": "",  # The job_card_selector itself is the link, so it will use its href
-        "description_selector": "div.job-card__skills",
-        "tags_selector": "div.job-card__skills span",
-        "date_selector": "span.job-card__date",  # E.g., "منذ 2 يوم" (2 days ago) - requires Arabic date parsing
+        "url": WebsiteConfig.FORASNA_URL,
+        "job_card_selector": WebsiteConfig.FORASNA_JOB_CARD_SELECTOR,
+        "title_selector": WebsiteConfig.FORASNA_TITLE_SELECTOR,
+        "link_selector": WebsiteConfig.FORASNA_LINK_SELECTOR,
+        "description_selector": WebsiteConfig.FORASNA_DESCRIPTION_SELECTOR,
+        "tags_selector": WebsiteConfig.FORASNA_TAGS_SELECTOR,
+        "date_selector": WebsiteConfig.FORASNA_DATE_SELECTOR,
     },
     {
         "name": "Bayt",
-        "url": "https://www.bayt.com/en/egypt/jobs/devops-jobs/",
-        # Corrected based on your new HTML snippet
-        "job_card_selector": "li.has-pointer-d",  # Main container for each job listing
-        "title_selector": "h2.t-large a",  # Title text is inside <a> within <h2 class="t-large">
-        "link_selector": "h2.t-large a",  # The href of this <a> is the job link
-        "description_selector": "div.jb-descr",  # Short description snippet
-        "tags_selector": "",  # "div.tags-box a" was not present in the new snippet, leaving empty for now
-        "date_selector": 'span[data-automation-id="job-active-date"]',  # Robust selector for the date span
+        "url": WebsiteConfig.BAYT_URL,
+        "job_card_selector": WebsiteConfig.BAYT_JOB_CARD_SELECTOR,
+        "title_selector": WebsiteConfig.BAYT_TITLE_SELECTOR,
+        "link_selector": WebsiteConfig.BAYT_LINK_SELECTOR,
+        "description_selector": WebsiteConfig.BAYT_DESCRIPTION_SELECTOR,
+        "tags_selector": WebsiteConfig.BAYT_TAGS_SELECTOR,
+        "date_selector": WebsiteConfig.BAYT_DATE_SELECTOR,
     },
-    # Add more job websites here following the same structure
-    # {
-    #     "name": "ExampleJobs",
-    #     "url": "https://examplejobs.com/devops",
-    #     "job_card_selector": ".job-listing",
-    #     "title_selector": ".job-title a",
-    #     "link_selector": ".job-title a",
-    #     "description_selector": ".job-description",
-    #     "tags_selector": ".job-tag",
-    #     "date_selector": ".job-date"
-    # },
 ]
 
-# Keywords used to filter job titles. Broader terms are acceptable here.
-JOB_TITLE_KEYWORDS = [
-    "DevOps",
-    "SRE",
-    "Site Reliability Engineer",
-    "Cloud Engineer",
-    "Kubernetes",
-    "AWS DevOps",
-    "Azure DevOps",
-    "GCP DevOps",
-    "Infrastructure Engineer",
-    "Automation Engineer",
-    "IT",
-    "system administrator",
-]
-
-# Keywords used to filter job descriptions. Can be more specific technical skills.
-JOB_KEYWORDS = [
-    "Docker",
-    "Kubernetes",
-    "AWS",
-    "Azure",
-    "GCP",
-    "Terraform",
-    "Ansible",
-    "Jenkins",
-    "GitLab CI",
-    "CI/CD",
-    "Linux",
-    "Scripting",
-    "Python",
-    "Bash",
-    "Monitoring",
-    "Prometheus",
-    "Grafana",
-    "ELK",
-    "Splunk",
-    "Microservices",
-    "Containerization",
-    "CloudFormation",
-    "Helm",
-    "ArgoCD",
-    "IaC",
-    "Infrastructure as Code",
-    "CI/CD Pipeline",
-    "IT",
-    "system administrator",
-]
-
-# --- WebDriver Configuration ---
-# Standard HTTP headers for web requests. Includes a common User-Agent to mimic a real browser.
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+SCRAPER_SETTINGS = {
+    "job_keywords": ScraperConfig.JOB_KEYWORDS,
+    "job_title_keywords": ScraperConfig.JOB_TITLE_KEYWORDS,
+    "max_job_age_days": ScraperConfig.MAX_JOB_AGE_DAYS,
+    "posted_jobs_file": ScraperConfig.POSTED_JOBS_FILE,
+    "max_scroll_pauses": ScraperConfig.MAX_SCROLL_PAUSES,
+    "scroll_pause_time": ScraperConfig.SCROLL_PAUSE_TIME,
+    "job_description_max_length": ScraperConfig.JOB_DESCRIPTION_MAX_LENGTH,
+    "min_jobs_per_website": ScraperConfig.MIN_JOBS_PER_WEBSITE,
 }
 
-# --- Persistence Configuration ---
-# File path for storing links of already posted jobs.
-# This ensures that duplicate notifications are avoided across different runs.
-# Prioritizes an environment variable for flexible deployment (e.g., mounting a volume in Docker).
-POSTED_JOBS_FILE = os.getenv("POSTED_JOBS_FILE", "posted_jobs.txt")
+TELEGRAM_SETTINGS = {
+    "bot_token": TelegramConfig.TELEGRAM_BOT_TOKEN,
+    "chat_id": TelegramConfig.TELEGRAM_CHAT_ID,
+}
+
+GENERAL_SETTINGS = {
+    "debug_mode": GeneralConfig.DEBUG_MODE,
+    "app_version": GeneralConfig.APP_VERSION,
+}

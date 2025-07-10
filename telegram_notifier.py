@@ -1,14 +1,11 @@
 import telegram
 import html
-from datetime import datetime
 import logging
 import os  # Import os for file path checks
 
 # Set up logging for this module
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-# No need to import POSTED_JOBS_FILE here, main.py will pass it.
 
 
 def load_posted_job_links(file_path: str) -> set:
@@ -56,9 +53,7 @@ async def send_telegram_message(bot_token: str, chat_id: str, job_post: dict):
     """
     bot = telegram.Bot(token=bot_token)
 
-    job_posted_date = job_post.get(
-        "posted_date", "N/A"
-    )  # Get the extracted date or default
+    job_posted_date = job_post.get("posted_date", "N/A")  # Get the extracted date or default
 
     clean_title = html.escape(job_post.get("title", "No Title"))
     clean_description = html.escape(
@@ -86,7 +81,10 @@ async def send_telegram_message(bot_token: str, chat_id: str, job_post: dict):
     # Estimate max length for truncation more accurately.
     # Base message length without description and tags.
     base_message_len = len(
-        f"✨ <b><u>New Job Posting - {job_post.get('source', 'Unknown')}</u></b> ✨\n<b>Title:</b> {clean_title}\n<b>Link:</b> <a href='{job_post.get('link', '#')}'>View Job</a>\n<b>Posted:</b> {job_posted_date}\n"
+        f"✨ <b><u>New Job Posting - {job_post.get('source', 'Unknown')}</u></b> "
+        f"✨\n<b>Title:</b> {clean_title}\n<b>Link:</b> "
+        f"<a href='{job_post.get('link', '#')}'>View Job</a>\n<b>Posted:</b> "
+        f"{job_posted_date}\n"
     )
     if clean_tags:
         base_message_len += len(f"<b>Tags:</b> {clean_tags}\n")
@@ -117,7 +115,8 @@ async def send_telegram_message(bot_token: str, chat_id: str, job_post: dict):
             disable_web_page_preview=True,
         )
         logger.info(
-            f"Telegram message sent for: {job_post['title']} (Source: {job_post['source']})"
+            f"Telegram message sent for: {job_post['title']} "
+            f"(Source: {job_post['source']})"
         )
         return True  # Indicate success
     except telegram.error.TelegramError as e:
@@ -127,15 +126,19 @@ async def send_telegram_message(bot_token: str, chat_id: str, job_post: dict):
             or "bad request: chat_id is empty" in str(e).lower()
         ):
             logger.error(
-                "Invalid Telegram Chat ID or bot not in chat. Please double-check your CHAT_ID and bot's admin status."
+                "Invalid Telegram Chat ID or bot not in chat. Please double-check "
+                "your CHAT_ID and bot's admin status."
             )
         elif "message is too long" in str(e).lower():
             logger.error(
-                f"Telegram message for {job_post['title']} is too long. Consider further truncation or splitting."
+                f"Telegram message for {job_post['title']} is too long. Consider "
+                "further truncation or splitting."
             )
         return False  # Indicate failure
     except Exception as e:
         logger.error(
-            f"An unexpected error occurred during Telegram sending for {job_post['title']}: {e}"
+            f"An unexpected error occurred during Telegram sending for "
+            f"{job_post['title']}: {e}"
         )
         return False  # Indicate failure
+    
