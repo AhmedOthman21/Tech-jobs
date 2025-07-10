@@ -197,8 +197,7 @@ def _get_href_from_element(
             return link
     except Exception as e:
         logger.debug(
-            f"Error getting href from {method_name} on {site_name}: {e}",
-            exc_info=False
+            f"Error getting href from {method_name} on {site_name}: {e}", exc_info=False
         )
     return None
 
@@ -211,13 +210,16 @@ def _attempt_link_from_selector(
         return None
     try:
         link_element = card.find_element(By.CSS_SELECTOR, selector)
-        return _get_href_from_element(link_element, site_name, "primary selector element")
+        return _get_href_from_element(
+            link_element, site_name, "primary selector element"
+        )
     except NoSuchElementException:
         logger.debug(f"Primary link selector '{selector}' not found on {site_name}.")
     except Exception as e:
         logger.warning(
             f"Error during primary link selector search on {site_name}: {e}. "
-            "Attempting fallback.", exc_info=True
+            "Attempting fallback.",
+            exc_info=True,
         )
     return None
 
@@ -236,21 +238,22 @@ def _attempt_link_from_title_element(
 
     # Try nested link within title element
     try:
-        nested_link_element = title_element.find_element(By.TAG_NAME, 'a')
-        return _get_href_from_element(nested_link_element, site_name, "nested title link")
+        nested_link_element = title_element.find_element(By.TAG_NAME, "a")
+        return _get_href_from_element(
+            nested_link_element, site_name, "nested title link"
+        )
     except NoSuchElementException:
         logger.debug(f"No nested link found in title_element on {site_name}.")
     except Exception as e:
         logger.warning(
             f"Error searching for nested link in title_element on {site_name}: {e}. "
-            "Attempting next fallback.", exc_info=True
+            "Attempting next fallback.",
+            exc_info=True,
         )
     return None
 
 
-def _attempt_link_from_card_direct(
-    card: WebElement, site_name: str
-) -> str | None:
+def _attempt_link_from_card_direct(card: WebElement, site_name: str) -> str | None:
     """Attempts to extract a link if the card element itself is an <a> tag."""
     return _get_href_from_element(card, site_name, "card element (direct a)")
 
