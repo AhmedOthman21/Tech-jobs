@@ -68,6 +68,10 @@ jobs:
       - name: Install Pytest
         run: pip install pytest
 
+      # Install Selenium and Telegram dependencies for the tests
+      - name: Install Selenium and Telegram dependencies
+        run: pip install selenium python-telegram-bot
+
       - name: Run Pytest
         run: pytest
 
