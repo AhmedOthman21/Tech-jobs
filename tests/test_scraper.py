@@ -15,6 +15,7 @@ _extract_date = scraper._extract_date
 
 # --- Tests for parse_date_string ---
 
+
 def test_parse_date_string_today():
     """Test parsing 'today' date string."""
     parsed_date = parse_date_string("today")
@@ -57,19 +58,32 @@ def test_parse_date_string_unparseable():
 @pytest.mark.parametrize(
     "title, description, title_keywords, desc_keywords, expected",
     [
-        ("DevOps Engineer Position", "Requires cloud experience",
-         ["devops"], ["cloud"], True),
+        (
+            "DevOps Engineer Position",
+            "Requires cloud experience",
+            ["devops"],
+            ["cloud"],
+            True,
+        ),
         ("Software Developer", "Needs Python skills", ["sre"], ["python"], False),
         ("SRE opening", "Cloud operations", ["sre"], ["devops"], False),
         ("DevOps Lead", "Looking for senior", ["devops"], ["junior"], False),
-        ("DevOps Junior", "Entry-level position", ["devops"],
-         ["entry-level"], True),
-        ("Cloud Architect", "AWS, Azure experience", ["cloud"],
-         ["aws", "azure"], True),
-        ("Site Reliability Engineer", "System monitoring", ["site reliability"],
-         ["monitoring"], True),
-        ("Not Relevant Title", "Not relevant description", ["devops"],
-         ["cloud"], False),
+        ("DevOps Junior", "Entry-level position", ["devops"], ["entry-level"], True),
+        ("Cloud Architect", "AWS, Azure experience", ["cloud"], ["aws", "azure"], True),
+        (
+            "Site Reliability Engineer",
+            "System monitoring",
+            ["site reliability"],
+            ["monitoring"],
+            True,
+        ),
+        (
+            "Not Relevant Title",
+            "Not relevant description",
+            ["devops"],
+            ["cloud"],
+            False,
+        ),
         ("DevOps Engineer", "Contract role", ["devops"], [], True),
         ("DevOps Engineer", "Contract role", ["devops"], ["contract"], True),
     ],
@@ -90,7 +104,7 @@ def test_extract_link_from_link_selector():
     mock_card.find_element.return_value = mock_link_element
 
     mock_title_element = Mock(spec=WebElement)
-    mock_title_element.tag_name = 'div'
+    mock_title_element.tag_name = "div"
     mock_title_element.get_attribute.return_value = None
     mock_title_element.find_element.side_effect = NoSuchElementException
 
@@ -106,7 +120,7 @@ def test_extract_link_from_title_element():
     """Test extracting link from title element as a fallback (title_element is <a>)."""
     mock_card = Mock(spec=WebElement)
     mock_title_element = Mock(spec=WebElement)
-    mock_title_element.tag_name = 'a'
+    mock_title_element.tag_name = "a"
     mock_title_element.get_attribute.return_value = "http://example.com/job2"
 
     mock_card.find_element.side_effect = NoSuchElementException(
@@ -125,7 +139,7 @@ def test_extract_link_from_title_element_nested_link():
     """Test extracting link from a nested <a> tag within the title element."""
     mock_card = Mock(spec=WebElement)
     mock_title_element = Mock(spec=WebElement)
-    mock_title_element.tag_name = 'div'
+    mock_title_element.tag_name = "div"
 
     mock_nested_link = Mock(spec=WebElement)
     mock_nested_link.get_attribute.return_value = "http://example.com/job_nested"
@@ -139,7 +153,7 @@ def test_extract_link_from_title_element_nested_link():
     assert link == "http://example.com/job_nested"
     mock_card.find_element.assert_called_once_with(By.CSS_SELECTOR, "a.job-link")
     mock_title_element.get_attribute.assert_not_called()
-    mock_title_element.find_element.assert_called_once_with(By.TAG_NAME, 'a')
+    mock_title_element.find_element.assert_called_once_with(By.TAG_NAME, "a")
     mock_nested_link.get_attribute.assert_called_once_with("href")
     mock_card.get_attribute.assert_not_called()
 
@@ -155,7 +169,7 @@ def test_extract_link_from_card_itself():
     )
 
     mock_title_element = Mock(spec=WebElement)
-    mock_title_element.tag_name = 'span'
+    mock_title_element.tag_name = "span"
     mock_title_element.get_attribute.return_value = None
     mock_title_element.find_element.side_effect = NoSuchElementException(
         "Mock: No nested link in title"
@@ -165,7 +179,7 @@ def test_extract_link_from_card_itself():
     assert link == "http://example.com/job3"
     mock_card.find_element.assert_called_once_with(By.CSS_SELECTOR, "a.job-link")
     mock_title_element.get_attribute.assert_not_called()
-    mock_title_element.find_element.assert_called_once_with(By.TAG_NAME, 'a')
+    mock_title_element.find_element.assert_called_once_with(By.TAG_NAME, "a")
     mock_card.get_attribute.assert_called_once_with("href")
 
 
@@ -177,7 +191,7 @@ def test_extract_link_not_found_all_fallbacks_fail():
     )
 
     mock_title_element = Mock(spec=WebElement)
-    mock_title_element.tag_name = 'p'
+    mock_title_element.tag_name = "p"
     mock_title_element.get_attribute.return_value = None
     mock_title_element.find_element.side_effect = NoSuchElementException(
         "Mock: No nested link in title"
@@ -190,8 +204,9 @@ def test_extract_link_not_found_all_fallbacks_fail():
 
     mock_card.find_element.assert_called_once_with(By.CSS_SELECTOR, "a.job-link")
     mock_title_element.get_attribute.assert_not_called()
-    mock_title_element.find_element.assert_called_once_with(By.TAG_NAME, 'a')
+    mock_title_element.find_element.assert_called_once_with(By.TAG_NAME, "a")
     mock_card.get_attribute.assert_not_called()
+
 
 # --- Tests for _extract_date ---
 
@@ -210,8 +225,10 @@ def test_extract_date_found():
             if date_str == "yesterday":
                 return expected_datetime_yesterday
             return datetime.now()
-        monkeypatch.setattr(scraper, "parse_date_string",
-                            mock_parse_date_string_with_element)
+
+        monkeypatch.setattr(
+            scraper, "parse_date_string", mock_parse_date_string_with_element
+        )
 
         date = _extract_date(mock_card, ".date", "Test Site")
         assert date.date() == expected_datetime_yesterday.date()
@@ -234,8 +251,10 @@ def test_extract_date_not_found():
             # This mock won't be called in this specific test path, but it's good to define it
             # consistently with how it's set up in other date tests.
             return datetime.now()
-        monkeypatch.setattr(scraper, "parse_date_string",
-                            mock_parse_date_string_with_element)
+
+        monkeypatch.setattr(
+            scraper, "parse_date_string", mock_parse_date_string_with_element
+        )
 
         date = _extract_date(mock_card, ".date", "Test Site")
         assert date.date() == datetime.now().date()
