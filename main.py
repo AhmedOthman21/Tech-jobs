@@ -12,7 +12,11 @@ from config import (
     GENERAL_SETTINGS,
 )
 from scraper import get_selenium_driver, scrape_jobs_from_website, is_job_posting
-from telegram_notifier import load_posted_job_links, add_posted_job_link, send_telegram_message
+from telegram_notifier import (
+    load_posted_job_links,
+    add_posted_job_link,
+    send_telegram_message,
+)
 
 
 # Setup logging based on configurations

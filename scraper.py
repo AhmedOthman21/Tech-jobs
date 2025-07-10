@@ -10,7 +10,9 @@ from selenium.common.exceptions import (
     TimeoutException,
     NoSuchElementException,
 )
-from selenium.webdriver.remote.webelement import WebElement  # Moved this import to the top
+from selenium.webdriver.remote.webelement import (
+    WebElement,
+)  # Moved this import to the top
 
 
 # Configure logging for the scraper module
@@ -135,7 +137,9 @@ def _parse_month_day_date(date_str: str) -> datetime | None:
     return None
 
 
-def parse_date_string(date_str: str, date_element: WebElement | None = None) -> datetime:
+def parse_date_string(
+    date_str: str, date_element: WebElement | None = None
+) -> datetime:
     """
     Parses a human-readable date string or extracts from a datetime attribute.
     Tries various parsing strategies sequentially.
@@ -177,8 +181,9 @@ def _extract_title(card: WebElement, selector: str, site_name: str) -> str:
         return ""
 
 
-def _extract_link(card: WebElement, title_element: WebElement, selector: str | None,
-                  site_name: str) -> str:
+def _extract_link(
+    card: WebElement, title_element: WebElement, selector: str | None, site_name: str
+) -> str:
     """Extracts job link from the card."""
     link = ""
     try:
@@ -224,8 +229,7 @@ def _extract_tags(card: WebElement, selector: str | None, site_name: str) -> lis
         return [tag.text.strip() for tag in tag_elements if tag.text.strip()]
     except NoSuchElementException:
         logger.debug(
-            f"Tags not found on {site_name} for a job card. "
-            "Skipping tag extraction."
+            f"Tags not found on {site_name} for a job card. " "Skipping tag extraction."
         )
         return []
 
@@ -252,7 +256,9 @@ def _extract_date(card: WebElement, selector: str | None, site_name: str) -> dat
         return datetime.now()
 
 
-def _extract_job_details_from_card(card: WebElement, website_config: dict) -> dict | None:
+def _extract_job_details_from_card(
+    card: WebElement, website_config: dict
+) -> dict | None:
     """
     Extracts title, link, description, tags, and posted date from a job card.
     """
@@ -264,18 +270,22 @@ def _extract_job_details_from_card(card: WebElement, website_config: dict) -> di
             return None  # Skip if title cannot be extracted
 
         # For link extraction, we might need the title_element itself
-        title_element = card.find_element(By.CSS_SELECTOR,
-                                          website_config["title_selector"])
-        link = _extract_link(card, title_element,
-                             website_config.get("link_selector"), site_name)
+        title_element = card.find_element(
+            By.CSS_SELECTOR, website_config["title_selector"]
+        )
+        link = _extract_link(
+            card, title_element, website_config.get("link_selector"), site_name
+        )
         if not link:
             return None  # Skip if link cannot be extracted
 
-        description = _extract_description(card,
-                                           website_config.get("description_selector"),
-                                           site_name)
+        description = _extract_description(
+            card, website_config.get("description_selector"), site_name
+        )
         tags = _extract_tags(card, website_config.get("tags_selector"), site_name)
-        posted_date = _extract_date(card, website_config.get("date_selector"), site_name)
+        posted_date = _extract_date(
+            card, website_config.get("date_selector"), site_name
+        )
 
         return {
             "title": title,
@@ -365,7 +375,9 @@ def is_job_posting(
     if not any(keyword.lower() in title_lower for keyword in title_keywords):
         return False
 
-    if not any(keyword.lower() in description_lower for keyword in description_keywords):
+    if not any(
+        keyword.lower() in description_lower for keyword in description_keywords
+    ):
         return False
 
     logger.debug(f"Job '{title}' matches all relevance criteria.")
