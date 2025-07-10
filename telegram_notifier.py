@@ -47,14 +47,8 @@ def add_posted_job_link(file_path: str, link: str):
         logger.error(f"An unexpected error occurred while adding posted job link: {e}")
 
 
-async def send_telegram_message(bot_token: str, chat_id: str, job_post: dict):
-    """
-    Sends a single job posting message to the specified Telegram chat/channel.
-    """
-    bot = telegram.Bot(token=bot_token)
-
-    job_posted_date = job_post.get("posted_date", "N/A")  # Get the extracted date or default
-
+def _format_telegram_message(job_post: dict) -> str:
+    """Constructs the core message parts for a job posting."""
     clean_title = html.escape(job_post.get("title", "No Title"))
     clean_description = html.escape(
         job_post.get("description", "No description available.")
@@ -67,7 +61,7 @@ async def send_telegram_message(bot_token: str, chat_id: str, job_post: dict):
         f"✨ <b><u>New Job Posting - {job_post.get('source', 'Unknown')}</u></b> ✨",
         f"<b>Title:</b> {clean_title}",
         f"<b>Link:</b> <a href='{job_post.get('link', '#')}'>View Job</a>",
-        f"<b>Posted:</b> {job_posted_date}",  # Include the extracted or scrape date
+        f"<b>Posted:</b> {job_post.get('posted_date', 'N/A')}",
     ]
 
     if clean_tags:
@@ -75,42 +69,72 @@ async def send_telegram_message(bot_token: str, chat_id: str, job_post: dict):
 
     message_parts.append("\n<b>Full Description:</b>")
     message_parts.append(f"<pre>{clean_description}</pre>")
+    return "\n".join(message_parts)
 
-    full_message = "\n".join(message_parts)
 
-    # Estimate max length for truncation more accurately.
-    # Base message length without description and tags.
-    base_message_len = len(
+def _truncate_message(full_message: str, job_post: dict) -> str:
+    """Truncates the message if it exceeds Telegram's length limit."""
+    if len(full_message) <= 4096:
+        return full_message
+
+    # Reconstruct parts to find the description start and truncate only it
+    clean_title = html.escape(job_post.get("title", "No Title"))
+    clean_tags = ", ".join(job_post.get("tags", []))
+    if clean_tags:
+        clean_tags = html.escape(clean_tags)
+
+    # Calculate length of static parts
+    static_parts_len = len(
         f"✨ <b><u>New Job Posting - {job_post.get('source', 'Unknown')}</u></b> "
         f"✨\n<b>Title:</b> {clean_title}\n<b>Link:</b> "
         f"<a href='{job_post.get('link', '#')}'>View Job</a>\n<b>Posted:</b> "
-        f"{job_posted_date}\n"
+        f"{job_post.get('posted_date', 'N/A')}\n"
     )
     if clean_tags:
-        base_message_len += len(f"<b>Tags:</b> {clean_tags}\n")
-    base_message_len += len(
-        "\n<b>Full Description:</b>\n<pre></pre>"
-    )  # account for pre tags
+        static_parts_len += len(f"<b>Tags:</b> {clean_tags}\n")
+    static_parts_len += len("\n<b>Full Description:</b>\n<pre></pre>")
 
-    if len(full_message) > 4096:
-        max_desc_len = (
-            4096
-            - base_message_len
-            - len("\n\n... (description truncated due to length limit)")
-        )
-        if max_desc_len < 50:  # Ensure at least some description is left
-            max_desc_len = 50
-        truncated_description = (
-            clean_description[:max_desc_len]
-            + "\n\n... (description truncated due to length limit)"
-        )
-        message_parts[-1] = f"<pre>{truncated_description}</pre>"
-        full_message = "\n".join(message_parts)
+    max_desc_len = (
+        4096 - static_parts_len - len("\n\n... (description truncated due to length limit)")
+    )
+
+    if max_desc_len < 50:  # Ensure a minimum description length if possible
+        max_desc_len = 50
+
+    original_description = html.escape(
+        job_post.get("description", "No description available.")
+    )
+    truncated_description = (
+        original_description[:max_desc_len]
+        + "\n\n... (description truncated due to length limit)"
+    )
+
+    message_parts = [
+        f"✨ <b><u>New Job Posting - {job_post.get('source', 'Unknown')}</u></b> ✨",
+        f"<b>Title:</b> {clean_title}",
+        f"<b>Link:</b> <a href='{job_post.get('link', '#')}'>View Job</a>",
+        f"<b>Posted:</b> {job_post.get('posted_date', 'N/A')}",
+    ]
+    if clean_tags:
+        message_parts.append(f"<b>Tags:</b> {clean_tags}")
+    message_parts.append("\n<b>Full Description:</b>")
+    message_parts.append(f"<pre>{truncated_description}</pre>")
+
+    return "\n".join(message_parts)
+
+
+async def send_telegram_message(bot_token: str, chat_id: str, job_post: dict):
+    """
+    Sends a single job posting message to the specified Telegram chat/channel.
+    """
+    bot = telegram.Bot(token=bot_token)
+    full_message = _format_telegram_message(job_post)
+    final_message = _truncate_message(full_message, job_post)
 
     try:
         await bot.send_message(
             chat_id=chat_id,
-            text=full_message,
+            text=final_message,
             parse_mode=telegram.constants.ParseMode.HTML,
             disable_web_page_preview=True,
         )
@@ -118,7 +142,7 @@ async def send_telegram_message(bot_token: str, chat_id: str, job_post: dict):
             f"Telegram message sent for: {job_post['title']} "
             f"(Source: {job_post['source']})"
         )
-        return True  # Indicate success
+        return True
     except telegram.error.TelegramError as e:
         logger.error(f"Error sending Telegram message for {job_post['title']}: {e}")
         if (
@@ -131,14 +155,13 @@ async def send_telegram_message(bot_token: str, chat_id: str, job_post: dict):
             )
         elif "message is too long" in str(e).lower():
             logger.error(
-                f"Telegram message for {job_post['title']} is too long. Consider "
-                "further truncation or splitting."
+                f"Telegram message for {job_post['title']} is still too long after "
+                "truncation. Consider further reducing description length."
             )
-        return False  # Indicate failure
+        return False
     except Exception as e:
         logger.error(
             f"An unexpected error occurred during Telegram sending for "
             f"{job_post['title']}: {e}"
         )
-        return False  # Indicate failure
-    
+        return False

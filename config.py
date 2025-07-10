@@ -35,14 +35,19 @@ class WebsiteConfig:
     )
     WUZZUF_TAGS_SELECTOR = os.getenv(
         "WUZZUF_TAGS_SELECTOR",
-        "div.css-y4udm8 a[class^='css-'], div.css-y4udm8 span.eoyjyou0",
+        (
+            "div.css-y4udm8 a[class^='css-'], "
+            "div.css-y4udm8 span.eoyjyou0"
+        ),
     )
     WUZZUF_DATE_SELECTOR = os.getenv("WUZZUF_DATE_SELECTOR", "div.css-d7j1kk > div")
 
     # NaukriGulf configuration
     NAUKRIGULF_URL = os.getenv("NAUKRIGULF_URL", "https://www.naukrigulf.com/devops-jobs")
     NAUKRIGULF_JOB_CARD_SELECTOR = os.getenv(
-        "NAUKRIGULF_JOB_CARD_SELECTOR", "div.ng-box.srp-tuple"
+        "NAUKRIGULF_JOB_CARD_SELECTOR",
+        # Breaking this line further to fit within 100 characters
+        "div.ng-box.srp-tuple",
     )
     NAUKRIGULF_TITLE_SELECTOR = os.getenv(
         "NAUKRIGULF_TITLE_SELECTOR", "a.info-position p.designation-title"

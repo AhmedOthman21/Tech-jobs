@@ -10,6 +10,8 @@ from selenium.common.exceptions import (
     TimeoutException,
     NoSuchElementException,
 )
+from selenium.webdriver.remote.webelement import WebElement  # Moved this import to the top
+
 
 # Configure logging for the scraper module
 logger = logging.getLogger(__name__)
@@ -22,39 +24,24 @@ def get_selenium_driver(headers: dict):
     and anti-detection measures, crucial for web scraping.
     """
     options = uc.ChromeOptions()
-    # Essential for running Chromium in a Docker container or headless environments,
-    # as root user in Docker often cannot use the sandbox.
     options.add_argument("--no-sandbox")
-    # Prevents Chromium from writing shared memory files to /dev/shm,
-    # important for constrained environments like Docker.
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument(f"user-agent={headers['User-Agent']}")
-    # These arguments attempt to evade detection as an automated browser.
     options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument(
-        "--start-maximized"
-    )  # Useful for consistent page rendering, even if ignored in headless
-    options.add_argument(
-        "--window-size=1920,1080"
-    )  # Ensures a consistent viewport size in headless mode
-    options.add_argument(
-        "--disable-gpu"
-    )  # Recommended for headless environments to avoid rendering issues
+    options.add_argument("--start-maximized")
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument("--disable-gpu")
     options.add_argument("--disable-infobars")
     options.add_argument("--disable-extensions")
-    options.add_argument("--proxy-server='direct://'")  # Direct connection, no proxy
-    options.add_argument("--proxy-bypass-list=*")  # Bypass proxy for all hosts
+    options.add_argument("--proxy-server='direct://'")
+    options.add_argument("--proxy-bypass-list=*")
     options.add_argument("--disable-features=IsolateOrigins,site-per-process")
     options.add_argument("--enable-features=NetworkService,NetworkServiceInProcess")
-    options.add_argument(
-        "--headless=new"
-    )  # Explicitly enables the new headless mode for efficiency and stability
+    options.add_argument("--headless=new")
 
     try:
         driver = uc.Chrome(options=options)
-        driver.set_page_load_timeout(
-            60
-        )  # Set a generous timeout for page loads to prevent hanging
+        driver.set_page_load_timeout(60)
         logger.info(
             "Selenium driver successfully initialized with headless configuration."
         )
@@ -66,7 +53,7 @@ def get_selenium_driver(headers: dict):
             e,
             exc_info=True,
         )
-        raise  # Re-raise to halt execution if driver cannot be initialized
+        raise
     except Exception as e:
         logger.critical(
             f"An unexpected error occurred during driver initialization: {e}",
@@ -75,31 +62,20 @@ def get_selenium_driver(headers: dict):
         raise
 
 
-def parse_date_string(date_str: str, date_element=None) -> datetime:
-    """
-    Parses a human-readable date string (e.g., '2 days ago', '1 hour ago',
-    'منذ 2 يوم') or extracts from a datetime attribute if date_element is provided.
-    """
-    date_str_lower = date_str.lower()
-
-    # Try to extract from 'datetime' attribute first if element is provided
+def _parse_datetime_attribute(date_element: WebElement | None) -> datetime | None:
+    """Tries to parse date from a 'datetime' attribute."""
     if date_element and date_element.tag_name == "time":
         datetime_attr = date_element.get_attribute("datetime")
         if datetime_attr:
             try:
                 return datetime.fromisoformat(datetime_attr.replace("Z", "+00:00"))
             except ValueError:
-                pass  # Fallback to text parsing if datetime attribute is malformed
+                pass
+    return None
 
-    # Handle "Today" and "Yesterday"
-    if "today" in date_str_lower:
-        return datetime.now()
-    elif "yesterday" in date_str_lower:
-        return datetime.now() - timedelta(days=1)
 
-    # Handle numerical relative times (e.g., "5 hours ago", "2 days ago",
-    # "30+ days ago")
-    # For English
+def _parse_relative_date(date_str_lower: str) -> datetime | None:
+    """Parses relative date strings like '2 days ago'."""
     match_en = re.search(
         r"(\d+)\s+(minute|hour|day|week|month|year)s?\s+ago", date_str_lower
     )
@@ -115,20 +91,14 @@ def parse_date_string(date_str: str, date_element=None) -> datetime:
         elif unit == "week":
             return datetime.now() - timedelta(weeks=value)
         elif unit == "month":
-            return datetime.now() - timedelta(
-                days=value * 30.437
-            )  # Average days in a month
+            return datetime.now() - timedelta(days=value * 30.437)
         elif unit == "year":
-            return datetime.now() - timedelta(
-                days=value * 365.25
-            )  # Average days in a year
+            return datetime.now() - timedelta(days=value * 365.25)
+    return None
 
-    # Handle "30+ days ago" (NaukriGulf)
-    if "30+ days ago" in date_str_lower:
-        return datetime.now() - timedelta(days=30)  # Treat as 30 days ago or more
 
-    # Handle Arabic relative times (Forasna: "منذ X يوم", "منذ X شهر")
-    # Example: "منذ 2 يوم" (2 days ago), "منذ 1 شهر" (1 month ago)
+def _parse_arabic_relative_date(date_str: str) -> datetime | None:
+    """Parses Arabic relative date strings like 'منذ 2 يوم'."""
     match_ar = re.search(
         r"منذ\s+(\d+)\s+(يوم|أيام|شهر|شهور|ساعة|ساعات|دقيقة|دقائق)", date_str
     )
@@ -138,37 +108,197 @@ def parse_date_string(date_str: str, date_element=None) -> datetime:
         if unit_ar in ["يوم", "أيام"]:
             return datetime.now() - timedelta(days=value)
         elif unit_ar in ["شهر", "شهور"]:
-            return datetime.now() - timedelta(days=value * 30.437)  # Approximation
+            return datetime.now() - timedelta(days=value * 30.437)
         elif unit_ar in ["ساعة", "ساعات"]:
             return datetime.now() - timedelta(hours=value)
         elif unit_ar in ["دقيقة", "دقائق"]:
             return datetime.now() - timedelta(minutes=value)
+    return None
 
-    # Handle month-day formats (e.g., "Jul 09") - assuming current year
-    # This might be less precise if the year isn't explicitly given and it's from
-    # previous year
+
+def _parse_month_day_date(date_str: str) -> datetime | None:
+    """Parses month-day formats like 'Jul 09'."""
     month_day_match = re.search(r"([A-Za-z]{3})\s+(\d{1,2})", date_str)
     if month_day_match:
         try:
             month_name = month_day_match.group(1)
             day = int(month_day_match.group(2))
             current_year = datetime.now().year
-            # Attempt to parse assuming current year
             dt_obj = datetime.strptime(f"{month_name} {day} {current_year}", "%b %d %Y")
-            # If the parsed date is in the future, assume it's from the previous year
             if dt_obj > datetime.now():
                 dt_obj = datetime.strptime(
                     f"{month_name} {day} {current_year - 1}", "%b %d %Y"
                 )
             return dt_obj
         except ValueError:
-            pass  # Fallback to default if parsing fails
+            pass
+    return None
 
-    # If no specific pattern matches, return current time as a fallback
+
+def parse_date_string(date_str: str, date_element: WebElement | None = None) -> datetime:
+    """
+    Parses a human-readable date string or extracts from a datetime attribute.
+    Tries various parsing strategies sequentially.
+    """
+    date_str_lower = date_str.lower()
+    now = datetime.now()
+
+    # Define parsing strategies in order of preference/likelihood
+    parsing_strategies = [
+        lambda: _parse_datetime_attribute(date_element),
+        lambda: now if "today" in date_str_lower else None,
+        lambda: now - timedelta(days=1) if "yesterday" in date_str_lower else None,
+        lambda: _parse_relative_date(date_str_lower),
+        lambda: now - timedelta(days=30) if "30+ days ago" in date_str_lower else None,
+        lambda: _parse_arabic_relative_date(date_str),
+        lambda: _parse_month_day_date(date_str),
+    ]
+
+    for strategy in parsing_strategies:
+        parsed_date = strategy()
+        if parsed_date:
+            return parsed_date
+
     logger.warning(
         f"Could not parse date string '{date_str}'. Defaulting to current time."
     )
-    return datetime.now()
+    return now
+
+
+def _extract_title(card: WebElement, selector: str, site_name: str) -> str:
+    """Extracts job title from the card."""
+    try:
+        return card.find_element(By.CSS_SELECTOR, selector).text.strip()
+    except NoSuchElementException:
+        logger.warning(
+            f"Title element not found on {site_name} for a job card. "
+            "Returning empty string."
+        )
+        return ""
+
+
+def _extract_link(card: WebElement, title_element: WebElement, selector: str | None,
+                  site_name: str) -> str:
+    """Extracts job link from the card."""
+    link = ""
+    try:
+        if selector:
+            link_element = card.find_element(By.CSS_SELECTOR, selector)
+            link = link_element.get_attribute("href")
+        if not link and title_element:
+            link = title_element.get_attribute("href")
+        if not link and card.tag_name == "a":
+            link = card.get_attribute("href")
+    except NoSuchElementException:
+        logger.debug(
+            f"Link element not found on {site_name}. Attempting fallback strategies."
+        )
+    if not link:
+        logger.warning(
+            f"Could not find link for a job on {site_name}. "
+            "Skipping this job link extraction."
+        )
+    return link or ""
+
+
+def _extract_description(card: WebElement, selector: str | None, site_name: str) -> str:
+    """Extracts job description from the card."""
+    if not selector:
+        return ""
+    try:
+        return card.find_element(By.CSS_SELECTOR, selector).text.strip()
+    except NoSuchElementException:
+        logger.debug(
+            f"Description not found on {site_name} for a job card. "
+            "Skipping description extraction."
+        )
+        return ""
+
+
+def _extract_tags(card: WebElement, selector: str | None, site_name: str) -> list[str]:
+    """Extracts job tags from the card."""
+    if not selector:
+        return []
+    try:
+        tag_elements = card.find_elements(By.CSS_SELECTOR, selector)
+        return [tag.text.strip() for tag in tag_elements if tag.text.strip()]
+    except NoSuchElementException:
+        logger.debug(
+            f"Tags not found on {site_name} for a job card. "
+            "Skipping tag extraction."
+        )
+        return []
+
+
+def _extract_date(card: WebElement, selector: str | None, site_name: str) -> datetime:
+    """Extracts job posted date from the card."""
+    if not selector:
+        return datetime.now()
+    try:
+        date_element = card.find_element(By.CSS_SELECTOR, selector)
+        date_text = date_element.text.strip()
+        return parse_date_string(date_text, date_element=date_element)
+    except NoSuchElementException:
+        logger.debug(
+            f"Posted date not found on {site_name} for a job card. "
+            "Defaulting to current time."
+        )
+        return datetime.now()
+    except Exception as e:
+        logger.warning(
+            f"Error parsing date on {site_name} for a job card: {e}. "
+            "Defaulting to current time."
+        )
+        return datetime.now()
+
+
+def _extract_job_details_from_card(card: WebElement, website_config: dict) -> dict | None:
+    """
+    Extracts title, link, description, tags, and posted date from a job card.
+    """
+    site_name = website_config["name"]
+
+    try:
+        title = _extract_title(card, website_config["title_selector"], site_name)
+        if not title:
+            return None  # Skip if title cannot be extracted
+
+        # For link extraction, we might need the title_element itself
+        title_element = card.find_element(By.CSS_SELECTOR,
+                                          website_config["title_selector"])
+        link = _extract_link(card, title_element,
+                             website_config.get("link_selector"), site_name)
+        if not link:
+            return None  # Skip if link cannot be extracted
+
+        description = _extract_description(card,
+                                           website_config.get("description_selector"),
+                                           site_name)
+        tags = _extract_tags(card, website_config.get("tags_selector"), site_name)
+        posted_date = _extract_date(card, website_config.get("date_selector"), site_name)
+
+        return {
+            "title": title,
+            "link": link,
+            "description": description,
+            "source": site_name,
+            "tags": tags,
+            "posted_date": posted_date.isoformat(),
+        }
+
+    except NoSuchElementException as e:
+        logger.warning(
+            f"Skipping job card on {site_name} due to missing primary element: {e}. "
+            "Card HTML might be malformed or selectors are incorrect."
+        )
+        return None
+    except Exception as e:
+        logger.warning(
+            f"An unexpected error occurred while processing a job card on "
+            f"{site_name}: {e}",
+            exc_info=True,
+        )
+        return None
 
 
 def scrape_jobs_from_website(driver: uc.Chrome, website_config: dict) -> list:
@@ -181,18 +311,11 @@ def scrape_jobs_from_website(driver: uc.Chrome, website_config: dict) -> list:
     url = website_config["url"]
     site_name = website_config["name"]
     job_card_selector = website_config["job_card_selector"]
-    title_selector = website_config["title_selector"]
-    link_selector = website_config.get("link_selector")
-    description_selector = website_config.get("description_selector")
-    tags_selector = website_config.get("tags_selector")
-    date_selector = website_config.get("date_selector")
 
     logger.info(f"Visiting {site_name} ({url}) to scrape job postings.")
     try:
         driver.get(url)
 
-        # Increased wait time for job cards to be present.
-        # This will wait up to 40 seconds for AT LEAST ONE job card to appear.
         WebDriverWait(driver, 40).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, job_card_selector))
         )
@@ -206,115 +329,10 @@ def scrape_jobs_from_website(driver: uc.Chrome, website_config: dict) -> list:
             )
             return []
 
-        for i, card in enumerate(job_cards):
-            title = ""
-            link = ""
-            description = ""
-            tags = []
-            posted_date = datetime.now()  # Default to now
-
-            try:
-                # 1. Extract Title
-                title_element = card.find_element(By.CSS_SELECTOR, title_selector)
-                title = title_element.text.strip()
-
-                # 2. Extract Link
-                if link_selector:  # If a specific link selector is provided
-                    try:
-                        link_element = card.find_element(By.CSS_SELECTOR, link_selector)
-                        link = link_element.get_attribute("href")
-                    except NoSuchElementException:
-                        logger.debug(
-                            f"Specific link element not found for job '{title}' on "
-                            f"{site_name}. Trying title element href."
-                        )
-                        link = title_element.get_attribute("href")
-                else:  # If no specific link_selector, try title_element or the card
-                    # itself (e.g., Forasna)
-                    link = title_element.get_attribute("href")
-                    if (
-                        not link and card.tag_name == "a"
-                    ):  # For cases like Forasna where the card itself is the link
-                        link = card.get_attribute("href")
-
-                if not link:
-                    logger.warning(
-                        f"Could not find link for job '{title}' on {site_name}. "
-                        "Skipping this job."
-                    )
-                    continue  # Skip this job if no link is found
-
-                # 3. Extract Description
-                if description_selector:
-                    try:
-                        description_element = card.find_element(
-                            By.CSS_SELECTOR, description_selector
-                        )
-                        description = description_element.text.strip()
-                    except NoSuchElementException:
-                        logger.debug(
-                            f"Description not found for job '{title}' on {site_name}. "
-                            "Skipping description extraction."
-                        )
-
-                # 4. Extract Tags
-                if tags_selector:
-                    try:
-                        tag_elements = card.find_elements(
-                            By.CSS_SELECTOR, tags_selector
-                        )
-                        tags = [
-                            tag.text.strip() for tag in tag_elements if tag.text.strip()
-                        ]
-                    except NoSuchElementException:
-                        logger.debug(
-                            f"Tags not found for job '{title}' on {site_name}. "
-                            "Skipping tag extraction."
-                        )
-
-                # 5. Extract Date
-                if date_selector:
-                    try:
-                        date_element = card.find_element(By.CSS_SELECTOR, date_selector)
-                        date_text = date_element.text.strip()
-                        posted_date = parse_date_string(
-                            date_text, date_element=date_element
-                        )
-                    except NoSuchElementException:
-                        logger.debug(
-                            f"Posted date not found for job '{title}' on {site_name}. "
-                            "Defaulting to current time."
-                        )
-                    except Exception as e:
-                        logger.warning(
-                            f"Error parsing date for job '{title}' on {site_name}: {e}. "
-                            "Defaulting to current time."
-                        )
-
-                jobs.append(
-                    {
-                        "title": title,
-                        "link": link,
-                        "description": description,
-                        "source": site_name,
-                        "tags": tags,
-                        "posted_date": posted_date.isoformat(),
-                    }
-                )
-                logger.debug(f"Extracted job: '{title}' from {site_name}.")
-
-            except NoSuchElementException as e:
-                logger.warning(
-                    f"Skipping job card {i+1} on {site_name} due to missing core "
-                    f"element (e.g., title): {e}. Card HTML might be malformed or "
-                    "selectors are incorrect for this specific card."
-                )
-            except Exception as e:
-                logger.warning(
-                    f"An unexpected error occurred while processing job card {i+1} on "
-                    f"{site_name}: {e}",
-                    exc_info=True,
-                )
+        for card in job_cards:
+            job_details = _extract_job_details_from_card(card, website_config)
+            if job_details:
+                jobs.append(job_details)
 
     except TimeoutException:
         logger.error(
@@ -342,19 +360,13 @@ def is_job_posting(
     and description. Performs case-insensitive matching for robustness.
     """
     title_lower = title.lower()
-    description_lower = (
-        description.lower()
-    )  # ensure description is lowercased for consistent behavior
+    description_lower = description.lower()
 
-    # Check for title keywords (typically more critical for initial filtering)
     if not any(keyword.lower() in title_lower for keyword in title_keywords):
-        return False  # No relevant title keyword found
+        return False
 
-    # Check for description keywords (more detailed filtering)
-    if not any(
-        keyword.lower() in description_lower for keyword in description_keywords
-    ):
-        return False  # No relevant description keyword found
+    if not any(keyword.lower() in description_lower for keyword in description_keywords):
+        return False
 
     logger.debug(f"Job '{title}' matches all relevance criteria.")
     return True

@@ -2,12 +2,11 @@ import asyncio
 import logging
 import random
 import time
-from typing import List, Dict
+from typing import List, Dict, Set
 
 from config import (
     LOGGER_SETTINGS,
     SCRAPER_SETTINGS,
-    WEBDRIVER_SETTINGS,
     WEBSITE_CONFIGS,
     TELEGRAM_SETTINGS,
     GENERAL_SETTINGS,
@@ -28,6 +27,52 @@ def setup_logging():
     )
 
 
+def process_scraped_jobs(
+    all_scraped_jobs: List[Dict], already_posted_links: Set[str]
+) -> List[Dict]:
+    """
+    Filters scraped jobs for new and relevant postings.
+    """
+    logger = logging.getLogger(__name__)
+    new_relevant_jobs = []
+    for job in all_scraped_jobs:
+        if job["link"] not in already_posted_links:
+            if is_job_posting(
+                job.get("title", ""),
+                job.get("description", ""),
+                SCRAPER_SETTINGS["job_title_keywords"],
+                SCRAPER_SETTINGS["job_keywords"],
+            ):
+                new_relevant_jobs.append(job)
+                # Add to the set immediately to prevent duplicates within the same run
+                already_posted_links.add(job["link"])
+            else:
+                logger.debug(f"Job '{job.get('title')}' is not relevant.")
+        else:
+            logger.debug(f"Job '{job.get('title')}' already posted. Skipping.")
+    return new_relevant_jobs
+
+
+async def notify_new_jobs(new_jobs: List[Dict], posted_jobs_file: str):
+    """
+    Sends new job postings to Telegram and records them.
+    """
+    logger = logging.getLogger(__name__)
+    if TELEGRAM_SETTINGS["bot_token"] and TELEGRAM_SETTINGS["chat_id"]:
+        for job in new_jobs:
+            success = await send_telegram_message(
+                TELEGRAM_SETTINGS["bot_token"], TELEGRAM_SETTINGS["chat_id"], job
+            )
+            if success:
+                add_posted_job_link(posted_jobs_file, job["link"])
+            await asyncio.sleep(1)  # Delay between messages to avoid rate limits
+    else:
+        logger.warning(
+            "Telegram bot token or chat ID not configured. Skipping Telegram "
+            "notifications."
+        )
+
+
 async def main():
     setup_logging()
     logger = logging.getLogger(__name__)
@@ -43,11 +88,11 @@ async def main():
     all_scraped_jobs: List[Dict] = []
     driver = None
     try:
-        # User-Agent for the Selenium driver
         headers = {
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/126.0.0.0 Safari/537.36"
             )
         }
         driver = get_selenium_driver(headers=headers)
@@ -65,43 +110,14 @@ async def main():
                     f"Failed to scrape jobs from {site_name}: {e}", exc_info=True
                 )
             finally:
-                # Add a random delay between website scrapes to mimic human behavior
-                time.sleep(random.uniform(5, 10))
+                time.sleep(random.uniform(5, 10))  # Delay between website scrapes
 
         logger.info(f"Total jobs scraped across all sites: {len(all_scraped_jobs)}")
 
-        new_jobs_found = []
-        for job in all_scraped_jobs:
-            if job["link"] not in already_posted_links:
-                if is_job_posting(
-                    job.get("title", ""),
-                    job.get("description", ""),
-                    SCRAPER_SETTINGS["job_title_keywords"],
-                    SCRAPER_SETTINGS["job_keywords"],
-                ):
-                    new_jobs_found.append(job)
-                    already_posted_links.add(job["link"])  # Add to the set
-                else:
-                    logger.debug(f"Job '{job.get('title')}' is not relevant.")
-            else:
-                logger.debug(f"Job '{job.get('title')}' already posted. Skipping.")
-
+        new_jobs_found = process_scraped_jobs(all_scraped_jobs, already_posted_links)
         logger.info(f"Found {len(new_jobs_found)} new relevant jobs.")
 
-        # Send new jobs to Telegram
-        if TELEGRAM_SETTINGS["bot_token"] and TELEGRAM_SETTINGS["chat_id"]:
-            for job in new_jobs_found:
-                success = await send_telegram_message(
-                    TELEGRAM_SETTINGS["bot_token"], TELEGRAM_SETTINGS["chat_id"], job
-                )
-                if success:
-                    add_posted_job_link(posted_jobs_file, job["link"])
-                await asyncio.sleep(1)  # Delay between messages to avoid rate limits
-        else:
-            logger.warning(
-                "Telegram bot token or chat ID not configured. Skipping Telegram "
-                "notifications."
-            )
+        await notify_new_jobs(new_jobs_found, posted_jobs_file)
 
     except Exception as e:
         logger.critical(f"An unhandled error occurred in main: {e}", exc_info=True)
@@ -114,4 +130,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-    
