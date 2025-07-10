@@ -95,7 +95,9 @@ def _truncate_message(full_message: str, job_post: dict) -> str:
     static_parts_len += len("\n<b>Full Description:</b>\n<pre></pre>")
 
     max_desc_len = (
-        4096 - static_parts_len - len("\n\n... (description truncated due to length limit)")
+        4096
+        - static_parts_len
+        - len("\n\n... (description truncated due to length limit)")
     )
 
     if max_desc_len < 50:  # Ensure a minimum description length if possible

@@ -17,7 +17,9 @@ class WebDriverConfig:
     HEADLESS_MODE = os.getenv("HEADLESS_MODE", "True").lower() == "true"
     DEFAULT_TIMEOUT_SECONDS = int(os.getenv("DEFAULT_TIMEOUT_SECONDS", 30))
     PAGE_LOAD_TIMEOUT_SECONDS = int(os.getenv("PAGE_LOAD_TIMEOUT_SECONDS", 60))
-    DRIVER_PATH = os.getenv("DRIVER_PATH")  # Optional, if using specific driver location
+    DRIVER_PATH = os.getenv(
+        "DRIVER_PATH"
+    )  # Optional, if using specific driver location
 
 
 class WebsiteConfig:
@@ -35,15 +37,14 @@ class WebsiteConfig:
     )
     WUZZUF_TAGS_SELECTOR = os.getenv(
         "WUZZUF_TAGS_SELECTOR",
-        (
-            "div.css-y4udm8 a[class^='css-'], "
-            "div.css-y4udm8 span.eoyjyou0"
-        ),
+        ("div.css-y4udm8 a[class^='css-'], " "div.css-y4udm8 span.eoyjyou0"),
     )
     WUZZUF_DATE_SELECTOR = os.getenv("WUZZUF_DATE_SELECTOR", "div.css-d7j1kk > div")
 
     # NaukriGulf configuration
-    NAUKRIGULF_URL = os.getenv("NAUKRIGULF_URL", "https://www.naukrigulf.com/devops-jobs")
+    NAUKRIGULF_URL = os.getenv(
+        "NAUKRIGULF_URL", "https://www.naukrigulf.com/devops-jobs"
+    )
     NAUKRIGULF_JOB_CARD_SELECTOR = os.getenv(
         "NAUKRIGULF_JOB_CARD_SELECTOR",
         # Breaking this line further to fit within 100 characters
@@ -52,9 +53,7 @@ class WebsiteConfig:
     NAUKRIGULF_TITLE_SELECTOR = os.getenv(
         "NAUKRIGULF_TITLE_SELECTOR", "a.info-position p.designation-title"
     )
-    NAUKRIGULF_LINK_SELECTOR = os.getenv(
-        "NAUKRIGULF_LINK_SELECTOR", "a.info-position"
-    )
+    NAUKRIGULF_LINK_SELECTOR = os.getenv("NAUKRIGULF_LINK_SELECTOR", "a.info-position")
     NAUKRIGULF_DESCRIPTION_SELECTOR = os.getenv(
         "NAUKRIGULF_DESCRIPTION_SELECTOR", "p.description"
     )
@@ -70,11 +69,15 @@ class WebsiteConfig:
     )
     FORASNA_JOB_CARD_SELECTOR = os.getenv("FORASNA_JOB_CARD_SELECTOR", "a.job-card")
     FORASNA_TITLE_SELECTOR = os.getenv("FORASNA_TITLE_SELECTOR", "h2.job-card__title")
-    FORASNA_LINK_SELECTOR = os.getenv("FORASNA_LINK_SELECTOR", "")  # Card itself is link
+    FORASNA_LINK_SELECTOR = os.getenv(
+        "FORASNA_LINK_SELECTOR", ""
+    )  # Card itself is link
     FORASNA_DESCRIPTION_SELECTOR = os.getenv(
         "FORASNA_DESCRIPTION_SELECTOR", "div.job-card__skills"
     )
-    FORASNA_TAGS_SELECTOR = os.getenv("FORASNA_TAGS_SELECTOR", "div.job-card__skills span")
+    FORASNA_TAGS_SELECTOR = os.getenv(
+        "FORASNA_TAGS_SELECTOR", "div.job-card__skills span"
+    )
     FORASNA_DATE_SELECTOR = os.getenv("FORASNA_DATE_SELECTOR", "span.job-card__date")
 
     # Bayt configuration
@@ -85,7 +88,7 @@ class WebsiteConfig:
     BAYT_DESCRIPTION_SELECTOR = os.getenv("BAYT_DESCRIPTION_SELECTOR", "div.jb-descr")
     BAYT_TAGS_SELECTOR = os.getenv("BAYT_TAGS_SELECTOR", "")
     BAYT_DATE_SELECTOR = os.getenv(
-        "BAYT_DATE_SELECTOR", "span[data-automation-id=\"job-active-date\"]"
+        "BAYT_DATE_SELECTOR", 'span[data-automation-id="job-active-date"]'
     )
 
 
