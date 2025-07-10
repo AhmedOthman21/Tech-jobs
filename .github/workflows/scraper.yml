@@ -68,9 +68,9 @@ jobs:
       - name: Install Pytest
         run: pip install pytest
 
-      # Install Selenium and Telegram dependencies for the tests
-      - name: Install Selenium and Telegram dependencies
-        run: pip install selenium python-telegram-bot
+      # Install Selenium, Telegram, undetected_chromedriver, and Tenacity dependencies
+      - name: Install dependencies for tests
+        run: pip install selenium python-telegram-bot undetected-chromedriver tenacity
 
       - name: Run Pytest
         run: pytest
