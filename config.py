@@ -17,13 +17,13 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 JOB_WEBSITES = [
     {
         "name": "Wuzzuf",
-        "url": "https://wuzzuf.net/a/devops-jobs-in-egypt", # Example URL, adjust as needed
-        "job_card_selector": "div.job-card",
-        "title_selector": "h2.job-card__title a",
-        "link_selector": "h2.job-card__title a",
-        "description_selector": "p.job-card__job-info",
-        "tags_selector": ".job-card__tag-item", # Example selector for tags
-        "date_selector": ".job-card__date" # Example selector for posted date
+        "url": "https://wuzzuf.net/a/devops-jobs-in-egypt",
+        "job_card_selector": "div.css-1gatmva.e1v1l3u10", # Most specific and stable
+        "title_selector": "h2.css-m604qf a",
+        "link_selector": "h2.css-m604qf a",
+        "description_selector": "div.css-y4udm8",
+        "tags_selector": "div.css-y4udm8 a[class^='css-'], div.css-y4udm8 span.eoyjyou0",
+        "date_selector": "div.css-d7j1kk > div" # Robust against dynamic class names
     },
     # Add more job websites here following the same structure
     # {

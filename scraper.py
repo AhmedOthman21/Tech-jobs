@@ -105,7 +105,7 @@ def scrape_jobs_from_website(driver: uc.Chrome, website_config: dict) -> list:
     try:
         driver.get(url)
         # Wait for job cards to be present, indicating page content has loaded.
-        WebDriverWait(driver, 20).until(
+        WebDriverWait(driver, 40).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, job_card_selector))
         )
         logger.debug(f"Successfully loaded and found job cards on {website_config['name']}.")
