@@ -1,5 +1,5 @@
 [flake8]
-max-line-length = 88  # Example: allow lines up to 120 characters (default is 79)
-extend-ignore = E203, W503 # Example: ignore whitespace before ':' and line break before binary operator
-exclude = .git,__pycache__,docs,venv,.venv,build,dist # Directories to exclude
-max-complexity = 10 # Cyclomatic complexity limit for functions
+max-line-length = 88
+extend-ignore = E203, W503
+exclude = .git,__pycache__,docs,venv,.venv,build,dist
+max-complexity = 10
