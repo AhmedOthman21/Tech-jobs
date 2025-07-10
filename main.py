@@ -20,7 +20,7 @@ from telegram_notifier import (
 
 
 # Setup logging based on configurations
-def setup_logging():
+def setup_logging() -> None:
     logging.basicConfig(
         level=LOGGER_SETTINGS["log_level"],
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -44,13 +44,10 @@ def process_scraped_jobs(
             if is_job_posting(
                 job.get("title", ""),
                 job.get("description", ""),
-                SCRAPER_SETTINGS[
-                    "job_title_keywords"
-                ],  # Ensure this is a list of strings
+                SCRAPER_SETTINGS["job_title_keywords"],  # Ensure this is a list of strings
                 SCRAPER_SETTINGS["job_keywords"],  # Ensure this is a list of strings
             ):
                 new_relevant_jobs.append(job)
-                # Add to the set immediately to prevent duplicates within the same run
                 already_posted_links.add(job["link"])
             else:
                 logger.debug(f"Job '{job.get('title')}' is not relevant.")
@@ -59,7 +56,7 @@ def process_scraped_jobs(
     return new_relevant_jobs
 
 
-async def notify_new_jobs(new_jobs: List[Dict], posted_jobs_file: str):
+async def notify_new_jobs(new_jobs: List[Dict], posted_jobs_file: str) -> None:
     """
     Sends new job postings to Telegram and records them.
     """
@@ -79,7 +76,7 @@ async def notify_new_jobs(new_jobs: List[Dict], posted_jobs_file: str):
         )
 
 
-async def main():
+async def main() -> None:
     setup_logging()
     logger = logging.getLogger(__name__)
 
