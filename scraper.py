@@ -9,12 +9,9 @@ from selenium.common.exceptions import (
     WebDriverException,
     TimeoutException,
     NoSuchElementException,
-    # Add other common Selenium exceptions you might encounter during network issues
-    # e.g., StaleElementReferenceException, ElementNotInteractableException
 )
 from selenium.webdriver.remote.webelement import WebElement
 
-# Import tenacity
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -23,7 +20,6 @@ from tenacity import (
 )
 
 
-# Configure logging for the scraper module
 logger = logging.getLogger(__name__)
 
 
@@ -155,7 +151,6 @@ def parse_date_string(
     date_str_lower = date_str.lower()
     now = datetime.now()
 
-    # Define parsing strategies in order of preference/likelihood
     parsing_strategies = [
         lambda: _parse_datetime_attribute(date_element),
         lambda: now if "today" in date_str_lower else None,
@@ -189,29 +184,102 @@ def _extract_title(card: WebElement, selector: str, site_name: str) -> str:
         return ""
 
 
+# --- Refined Helper Functions for _extract_link ---
+
+
+def _get_href_from_element(
+    element: WebElement, site_name: str, method_name: str
+) -> str | None:
+    """Safely extracts href attribute from a WebElement, logging debug info."""
+    try:
+        link = element.get_attribute("href")
+        if link:
+            return link
+    except Exception as e:
+        logger.debug(
+            f"Error getting href from {method_name} on {site_name}: {e}",
+            exc_info=False
+        )
+    return None
+
+
+def _attempt_link_from_selector(
+    card: WebElement, selector: str | None, site_name: str
+) -> str | None:
+    """Attempts to find an element by CSS selector and extract its link."""
+    if not selector:
+        return None
+    try:
+        link_element = card.find_element(By.CSS_SELECTOR, selector)
+        return _get_href_from_element(link_element, site_name, "primary selector element")
+    except NoSuchElementException:
+        logger.debug(f"Primary link selector '{selector}' not found on {site_name}.")
+    except Exception as e:
+        logger.warning(
+            f"Error during primary link selector search on {site_name}: {e}. "
+            "Attempting fallback.", exc_info=True
+        )
+    return None
+
+
+def _attempt_link_from_title_element(
+    title_element: WebElement, site_name: str
+) -> str | None:
+    """Attempts to extract a link from the title element itself or a nested link."""
+    if not title_element:
+        return None
+
+    # Try title element itself
+    link = _get_href_from_element(title_element, site_name, "title element (direct)")
+    if link:
+        return link
+
+    # Try nested link within title element
+    try:
+        nested_link_element = title_element.find_element(By.TAG_NAME, 'a')
+        return _get_href_from_element(nested_link_element, site_name, "nested title link")
+    except NoSuchElementException:
+        logger.debug(f"No nested link found in title_element on {site_name}.")
+    except Exception as e:
+        logger.warning(
+            f"Error searching for nested link in title_element on {site_name}: {e}. "
+            "Attempting next fallback.", exc_info=True
+        )
+    return None
+
+
+def _attempt_link_from_card_direct(
+    card: WebElement, site_name: str
+) -> str | None:
+    """Attempts to extract a link if the card element itself is an <a> tag."""
+    return _get_href_from_element(card, site_name, "card element (direct a)")
+
+
 def _extract_link(
     card: WebElement, title_element: WebElement, selector: str | None, site_name: str
 ) -> str:
-    """Extracts job link from the card."""
-    link = ""
-    try:
-        if selector:
-            link_element = card.find_element(By.CSS_SELECTOR, selector)
-            link = link_element.get_attribute("href")
-        if not link and title_element:
-            link = title_element.get_attribute("href")
-        if not link and card.tag_name == "a":
-            link = card.get_attribute("href")
-    except NoSuchElementException:
-        logger.debug(
-            f"Link element not found on {site_name}. Attempting fallback strategies."
-        )
-    if not link:
-        logger.warning(
-            f"Could not find link for a job on {site_name}. "
-            "Skipping this job link extraction."
-        )
-    return link or ""
+    """Extracts job link from the card using sequential fallbacks."""
+
+    # Attempt 1: Specific link selector
+    link = _attempt_link_from_selector(card, selector, site_name)
+    if link:
+        return link
+
+    # Attempt 2: Title element (direct or nested)
+    link = _attempt_link_from_title_element(title_element, site_name)
+    if link:
+        return link
+
+    # Attempt 3: Card element itself
+    link = _attempt_link_from_card_direct(card, site_name)
+    if link:
+        return link
+
+    logger.warning(
+        f"Could not find link for a job on {site_name}. "
+        "Skipping this job link extraction."
+    )
+    return ""
 
 
 def _extract_description(card: WebElement, selector: str | None, site_name: str) -> str:
@@ -275,9 +343,9 @@ def _extract_job_details_from_card(
     try:
         title = _extract_title(card, website_config["title_selector"], site_name)
         if not title:
-            return None  # Skip if title cannot be extracted
+            return None
 
-        # For link extraction, we might need the title_element itself
+        # Pass the card directly to find title element for link extraction
         title_element = card.find_element(
             By.CSS_SELECTOR, website_config["title_selector"]
         )
@@ -285,7 +353,7 @@ def _extract_job_details_from_card(
             card, title_element, website_config.get("link_selector"), site_name
         )
         if not link:
-            return None  # Skip if link cannot be extracted
+            return None
 
         description = _extract_description(
             card, website_config.get("description_selector"), site_name
@@ -320,8 +388,8 @@ def _extract_job_details_from_card(
 
 
 @retry(
-    stop=stop_after_attempt(3),  # Try up to 3 times
-    wait=wait_exponential(multiplier=1, min=4, max=10),  # Wait 4s, 8s, then 10s max
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=4, max=10),
     retry=retry_if_exception_type((TimeoutException, WebDriverException)),
 )
 def _safe_driver_get(driver: uc.Chrome, url: str):
@@ -344,7 +412,6 @@ def scrape_jobs_from_website(driver: uc.Chrome, website_config: dict) -> list:
 
     logger.info(f"Visiting {site_name} ({url}) to scrape job postings.")
     try:
-        # Use the retried safe_driver_get function
         _safe_driver_get(driver, url)
 
         WebDriverWait(driver, 40).until(
@@ -396,10 +463,11 @@ def is_job_posting(
     if not any(keyword.lower() in title_lower for keyword in title_keywords):
         return False
 
-    if not any(
-        keyword.lower() in description_lower for keyword in description_keywords
-    ):
-        return False
+    if description_keywords:
+        if not any(
+            keyword.lower() in description_lower for keyword in description_keywords
+        ):
+            return False
 
     logger.debug(f"Job '{title}' matches all relevance criteria.")
     return True
