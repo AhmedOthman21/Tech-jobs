@@ -44,7 +44,7 @@ async def main():
             return
 
         # Initialize Selenium WebDriver. This step is critical and can fail if browser setup is incorrect.
-        driver = get_selenium_driver(HEADERS)
+        driver = get_selenium_driver(HEADERS, run_headless=False)
 
         # Iterate through configured job websites and scrape postings.
         # This aggregates all raw job data before filtering.
