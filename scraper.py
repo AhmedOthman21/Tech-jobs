@@ -193,7 +193,8 @@ def _get_href_from_element(
     """Safely extracts href attribute from a WebElement, logging debug info."""
     try:
         link = element.get_attribute("href")
-        if link:
+        # Only return if it's a real string (not a mock or None)
+        if isinstance(link, str) and link:
             return link
     except Exception as e:
         logger.debug(
@@ -231,10 +232,13 @@ def _attempt_link_from_title_element(
     if not title_element:
         return None
 
-    # Try title element itself
-    link = _get_href_from_element(title_element, site_name, "title element (direct)")
-    if link:
-        return link
+    # Only try title element itself if it's actually an <a> tag
+    if title_element.tag_name == "a":
+        link = _get_href_from_element(
+            title_element, site_name, "title element (direct)"
+        )
+        if link:
+            return link
 
     # Try nested link within title element
     try:
@@ -255,7 +259,9 @@ def _attempt_link_from_title_element(
 
 def _attempt_link_from_card_direct(card: WebElement, site_name: str) -> str | None:
     """Attempts to extract a link if the card element itself is an <a> tag."""
-    return _get_href_from_element(card, site_name, "card element (direct a)")
+    if card.tag_name == "a":
+        return _get_href_from_element(card, site_name, "card element (direct a)")
+    return None
 
 
 def _extract_link(
