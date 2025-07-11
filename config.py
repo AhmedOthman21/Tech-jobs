@@ -95,15 +95,19 @@ class WebsiteConfig:
 class ScraperConfig:
     """General configuration for the job scraper."""
 
-    JOB_KEYWORDS = os.getenv(
-        "JOB_KEYWORDS",
-        "DevOps Engineer,SRE,Cloud Engineer,Site Reliability Engineer,"
-        "Platform Engineer,Infrastructure Engineer",
-    ).split(",")
-    JOB_TITLE_KEYWORDS = os.getenv(
-        "JOB_TITLE_KEYWORDS",
-        "DevOps,SRE,Cloud,Site Reliability,Platform,Infrastructure",
-    ).split(",")
+    JOB_KEYWORDS = list(
+        os.getenv(
+            "JOB_KEYWORDS",
+            "DevOps Engineer,SRE,Cloud Engineer,Site Reliability Engineer,"
+            "Platform Engineer,Infrastructure Engineer",
+        ).split(",")
+    )
+    JOB_TITLE_KEYWORDS = list(
+        os.getenv(
+            "JOB_TITLE_KEYWORDS",
+            "DevOps,SRE,Cloud,Site Reliability,Platform,Infrastructure",
+        ).split(",")
+    )
 
     MAX_JOB_AGE_DAYS = int(os.getenv("MAX_JOB_AGE_DAYS", 1))
     POSTED_JOBS_FILE = os.getenv("POSTED_JOBS_FILE", "posted_jobs.txt")
@@ -184,15 +188,19 @@ WEBSITE_CONFIGS = [
 ]
 
 SCRAPER_SETTINGS = {
-    "job_keywords": os.getenv(
-        "JOB_KEYWORDS",
-        "DevOps Engineer,SRE,Cloud Engineer,Site Reliability Engineer,"
-        "Platform Engineer,Infrastructure Engineer",
-    ).split(","),
-    "job_title_keywords": os.getenv(
-        "JOB_TITLE_KEYWORDS",
-        "DevOps,SRE,Cloud,Site Reliability,Platform,Infrastructure",
-    ).split(","),
+    "job_keywords": list(
+        os.getenv(
+            "JOB_KEYWORDS",
+            "DevOps Engineer,SRE,Cloud Engineer,Site Reliability Engineer,"
+            "Platform Engineer,Infrastructure Engineer",
+        ).split(",")
+    ),
+    "job_title_keywords": list(
+        os.getenv(
+            "JOB_TITLE_KEYWORDS",
+            "DevOps,SRE,Cloud,Site Reliability,Platform,Infrastructure",
+        ).split(",")
+    ),
     "posted_jobs_file": os.getenv("POSTED_JOBS_FILE", "posted_jobs.txt"),
 }
 
