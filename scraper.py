@@ -175,7 +175,7 @@ def parse_date_string(
 def _extract_title(card: WebElement, selector: str, site_name: str) -> str:
     """Extracts job title from the card."""
     try:
-        return card.find_element(By.CSS_SELECTOR, selector).text.strip()
+        return str(card.find_element(By.CSS_SELECTOR, selector).text.strip())
     except NoSuchElementException:
         logger.warning(
             f"Title element not found on {site_name} for a job card. "
@@ -296,7 +296,7 @@ def _extract_description(card: WebElement, selector: str | None, site_name: str)
     if not selector:
         return ""
     try:
-        return card.find_element(By.CSS_SELECTOR, selector).text.strip()
+        return str(card.find_element(By.CSS_SELECTOR, selector).text.strip())
     except NoSuchElementException:
         logger.debug(
             f"Description not found on {site_name} for a job card. "
