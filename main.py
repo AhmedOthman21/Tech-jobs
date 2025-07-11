@@ -44,10 +44,8 @@ def process_scraped_jobs(
             if is_job_posting(
                 job.get("title", ""),
                 job.get("description", ""),
-                SCRAPER_SETTINGS[
-                    "job_title_keywords"
-                ],  # Ensure this is a list of strings
-                SCRAPER_SETTINGS["job_keywords"],  # Ensure this is a list of strings
+                list(SCRAPER_SETTINGS["job_title_keywords"]),
+                list(SCRAPER_SETTINGS["job_keywords"]),
             ):
                 new_relevant_jobs.append(job)
                 already_posted_links.add(job["link"])
