@@ -193,6 +193,7 @@ SCRAPER_SETTINGS = {
         "JOB_TITLE_KEYWORDS",
         "DevOps,SRE,Cloud,Site Reliability,Platform,Infrastructure",
     ).split(","),
+    "posted_jobs_file": os.getenv("POSTED_JOBS_FILE", "posted_jobs.txt"),
 }
 
 TELEGRAM_SETTINGS = {
