@@ -122,6 +122,9 @@ class TelegramConfig:
 
     TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
     TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+    INCLUDE_DATE_IN_MESSAGE = (
+        os.getenv("INCLUDE_DATE_IN_MESSAGE", "False").lower() == "true"
+    )
 
 
 class GeneralConfig:
@@ -207,6 +210,7 @@ SCRAPER_SETTINGS = {
 TELEGRAM_SETTINGS = {
     "bot_token": TelegramConfig.TELEGRAM_BOT_TOKEN,
     "chat_id": TelegramConfig.TELEGRAM_CHAT_ID,
+    "include_date_in_message": TelegramConfig.INCLUDE_DATE_IN_MESSAGE,
 }
 
 GENERAL_SETTINGS = {
