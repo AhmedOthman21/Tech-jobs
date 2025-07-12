@@ -51,7 +51,7 @@ def add_posted_job_link(file_path: str, link: str):
         logger.error(f"An unexpected error occurred while adding posted job link: {e}")
 
 
-def _format_telegram_message(job_post: dict) -> str:
+def _format_telegram_message(job_post: dict, include_date: bool = False) -> str:
     """Constructs the core message parts for a job posting."""
     clean_title = html.escape(job_post.get("title", "No Title"))
     clean_description = html.escape(
@@ -65,8 +65,11 @@ def _format_telegram_message(job_post: dict) -> str:
         f"✨ <b><u>New Job Posting - {job_post.get('source', 'Unknown')}</u></b> ✨",
         f"<b>Title:</b> {clean_title}",
         f"<b>Link:</b> <a href='{job_post.get('link', '#')}'>View Job</a>",
-        f"<b>Posted:</b> {job_post.get('posted_date', 'N/A')}",
     ]
+
+    # Add date only if requested
+    if include_date:
+        message_parts.append(f"<b>Posted:</b> {job_post.get('posted_date', 'N/A')}")
 
     if clean_tags:
         message_parts.append(f"<b>Tags:</b> {clean_tags}")
@@ -76,7 +79,9 @@ def _format_telegram_message(job_post: dict) -> str:
     return "\n".join(message_parts)
 
 
-def _truncate_message(full_message: str, job_post: dict) -> str:
+def _truncate_message(
+    full_message: str, job_post: dict, include_date: bool = False
+) -> str:
     """Truncates the message if it exceeds Telegram's length limit."""
     if len(full_message) <= 4096:
         return full_message
@@ -88,15 +93,23 @@ def _truncate_message(full_message: str, job_post: dict) -> str:
         clean_tags = html.escape(clean_tags)
 
     # Calculate length of static parts
-    static_parts_len = len(
+    static_parts_base = (
         f"✨ <b><u>New Job Posting - {job_post.get('source', 'Unknown')}</u></b> "
         f"✨\n<b>Title:</b> {clean_title}\n<b>Link:</b> "
-        f"<a href='{job_post.get('link', '#')}'>View Job</a>\n<b>Posted:</b> "
-        f"{job_post.get('posted_date', 'N/A')}\n"
+        f"<a href='{job_post.get('link', '#')}'>View Job</a>"
     )
+
+    static_parts_len = len(static_parts_base)
+
+    # Add date length if included
+    if include_date:
+        static_parts_len += len(
+            f"\n<b>Posted:</b> {job_post.get('posted_date', 'N/A')}"
+        )
+
     if clean_tags:
-        static_parts_len += len(f"<b>Tags:</b> {clean_tags}\n")
-    static_parts_len += len("\n<b>Full Description:</b>\n<pre></pre>")
+        static_parts_len += len(f"\n<b>Tags:</b> {clean_tags}")
+    static_parts_len += len("\n\n<b>Full Description:</b>\n<pre></pre>")
 
     max_desc_len = (
         4096
@@ -119,8 +132,12 @@ def _truncate_message(full_message: str, job_post: dict) -> str:
         f"✨ <b><u>New Job Posting - {job_post.get('source', 'Unknown')}</u></b> ✨",
         f"<b>Title:</b> {clean_title}",
         f"<b>Link:</b> <a href='{job_post.get('link', '#')}'>View Job</a>",
-        f"<b>Posted:</b> {job_post.get('posted_date', 'N/A')}",
     ]
+
+    # Add date only if requested
+    if include_date:
+        message_parts.append(f"<b>Posted:</b> {job_post.get('posted_date', 'N/A')}")
+
     if clean_tags:
         message_parts.append(f"<b>Tags:</b> {clean_tags}")
     message_parts.append("\n<b>Full Description:</b>")
@@ -134,14 +151,22 @@ def _truncate_message(full_message: str, job_post: dict) -> str:
     wait=wait_fixed(2),  # Wait 2 seconds between retries
     retry=retry_if_exception_type(telegram.error.TelegramError),
 )
-async def send_telegram_message(bot_token: str, chat_id: str, job_post: dict):
+async def send_telegram_message(
+    bot_token: str, chat_id: str, job_post: dict, include_date: bool = False
+):
     """
     Sends a single job posting message to the specified Telegram chat/channel.
     Includes retry logic for network/API errors.
+
+    Args:
+        bot_token: Telegram bot token
+        chat_id: Telegram chat ID
+        job_post: Job posting dictionary
+        include_date: Whether to include the posted date in the message (default: False)
     """
     bot = telegram.Bot(token=bot_token)
-    full_message = _format_telegram_message(job_post)
-    final_message = _truncate_message(full_message, job_post)
+    full_message = _format_telegram_message(job_post, include_date)
+    final_message = _truncate_message(full_message, job_post, include_date)
 
     try:
         await bot.send_message(

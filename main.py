@@ -64,7 +64,10 @@ async def notify_new_jobs(new_jobs: List[Dict], posted_jobs_file: str) -> None:
     if TELEGRAM_SETTINGS["bot_token"] and TELEGRAM_SETTINGS["chat_id"]:
         for job in new_jobs:
             success = await send_telegram_message(
-                TELEGRAM_SETTINGS["bot_token"], TELEGRAM_SETTINGS["chat_id"], job
+                str(TELEGRAM_SETTINGS["bot_token"] or ""),
+                str(TELEGRAM_SETTINGS["chat_id"] or ""),
+                job,
+                bool(TELEGRAM_SETTINGS["include_date_in_message"]),
             )
             if success:
                 add_posted_job_link(posted_jobs_file, job["link"])

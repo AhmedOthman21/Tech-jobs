@@ -63,7 +63,7 @@ async def test_send_telegram_message_success(mock_bot_class):
         "posted_date": "2024-01-01",
     }
 
-    result = await send_telegram_message("fake_token", "fake_chat_id", job_post)
+    result = await send_telegram_message("fake_token", "fake_chat_id", job_post, False)
 
     assert result is True
     mock_bot_class.assert_called_once_with(token="fake_token")
@@ -95,7 +95,7 @@ async def test_send_telegram_message_too_long(mock_bot_class):
         "posted_date": "2024-01-01",
     }
 
-    result = await send_telegram_message("fake_token", "fake_chat_id", job_post)
+    result = await send_telegram_message("fake_token", "fake_chat_id", job_post, False)
     assert result is False  # Should not retry, just fail
     # Ensure truncation logic was applied
     args, kwargs = mock_bot_instance.send_message.call_args
@@ -121,7 +121,9 @@ async def test_send_telegram_message_chat_not_found(mock_bot_class):
         "posted_date": "N/A",
     }
 
-    result = await send_telegram_message("fake_token", "invalid_chat_id", job_post)
+    result = await send_telegram_message(
+        "fake_token", "invalid_chat_id", job_post, False
+    )
     assert result is False  # Should not retry, just fail
 
 
@@ -149,8 +151,66 @@ async def test_send_telegram_message_network_error_retries(mock_bot_class):
 
     # We expect send_telegram_message to return True after 3 attempts,
     # as tenacity will handle the retries within this call.
-    result = await send_telegram_message("fake_token", "fake_chat_id", job_post)
+    result = await send_telegram_message("fake_token", "fake_chat_id", job_post, False)
     assert result is True
     assert (
         mock_bot_instance.send_message.call_count == 3
     )  # Should have been called 3 times
+
+
+@pytest.mark.asyncio
+@patch("telegram_notifier.telegram.Bot")
+async def test_send_telegram_message_with_date(mock_bot_class):
+    """Test sending a Telegram message with date included."""
+    mock_bot_instance = AsyncMock()
+    mock_bot_class.return_value = mock_bot_instance
+
+    job_post = {
+        "title": "Test Job with Date",
+        "link": "http://test.com/job",
+        "description": "This is a test description.",
+        "source": "TestSource",
+        "tags": ["python", "devops"],
+        "posted_date": "2024-01-01",
+    }
+
+    result = await send_telegram_message("fake_token", "fake_chat_id", job_post, True)
+
+    assert result is True
+    mock_bot_class.assert_called_once_with(token="fake_token")
+    mock_bot_instance.send_message.assert_called_once()
+    args, kwargs = mock_bot_instance.send_message.call_args
+    assert kwargs["chat_id"] == "fake_chat_id"
+    assert "Test Job with Date" in kwargs["text"]
+    assert "<b>Posted:</b> 2024-01-01" in kwargs["text"]
+    assert kwargs["parse_mode"] == telegram.constants.ParseMode.HTML
+
+
+@pytest.mark.asyncio
+@patch("telegram_notifier.telegram.Bot")
+async def test_send_telegram_message_without_date(mock_bot_class):
+    """Test sending a Telegram message without date included."""
+    mock_bot_instance = AsyncMock()
+    mock_bot_class.return_value = mock_bot_instance
+
+    job_post = {
+        "title": "Test Job without Date",
+        "link": "http://test.com/job",
+        "description": "This is a test description.",
+        "source": "TestSource",
+        "tags": ["python", "devops"],
+        "posted_date": "2024-01-01",
+    }
+
+    result = await send_telegram_message("fake_token", "fake_chat_id", job_post, False)
+
+    assert result is True
+    mock_bot_class.assert_called_once_with(token="fake_token")
+    mock_bot_instance.send_message.assert_called_once()
+    args, kwargs = mock_bot_instance.send_message.call_args
+    assert kwargs["chat_id"] == "fake_chat_id"
+    assert "Test Job without Date" in kwargs["text"]
+    assert (
+        "<b>Posted:</b> 2024-01-01" not in kwargs["text"]
+    )  # Date should not be included
+    assert kwargs["parse_mode"] == telegram.constants.ParseMode.HTML
