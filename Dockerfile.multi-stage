@@ -1,0 +1,45 @@
+# Multi-stage build for smaller final image
+FROM python:3.10-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache \
+    gcc \
+    musl-dev \
+    libffi-dev \
+    openssl-dev \
+    cargo
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# Final stage
+FROM python:3.10-alpine
+
+# Install runtime dependencies for Chromium
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
+
+# Set environment variables for Chromium
+ENV CHROME_BIN=/usr/bin/chromium-browser
+ENV CHROME_PATH=/usr/lib/chromium/
+ENV POSTED_JOBS_FILE="posted_jobs.txt"
+
+# Copy Python packages from builder stage
+COPY --from=builder /root/.local /root/.local
+
+# Set working directory
+WORKDIR /app
+
+# Copy application code
+COPY . .
+
+# Add local bin to PATH
+ENV PATH=/root/.local/bin:$PATH
+
+CMD ["python", "main.py"] 
