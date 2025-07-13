@@ -3,10 +3,11 @@ name: Job Scraper CI/CD
 
 # Define triggers for this workflow.
 on:
-  # Trigger on pushes to the 'main' branch for continuous integration (CI) and immediate deployment checks.
+  # Trigger on pushes to the 'main' and 'docker' branches for continuous integration (CI) and immediate deployment checks.
   push:
     branches:
       - main
+      - docker
   # Schedule recurring runs for automated job scraping.
   # '0 2 * * *' means 02:00 AM UTC daily. Adjust cron expression as needed.
   schedule:

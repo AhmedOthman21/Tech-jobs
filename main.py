@@ -98,14 +98,7 @@ async def main() -> None:
     all_scraped_jobs: List[Dict] = []
     driver = None
     try:
-        headers = {
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/126.0.0.0 Safari/537.36"
-            )
-        }
-        driver = get_selenium_driver(headers=headers)
+        driver = get_selenium_driver()
 
         for website_config in WEBSITE_CONFIGS:
             site_name = website_config["name"]
