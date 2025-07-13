@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime
 from unittest.mock import Mock
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
@@ -215,48 +215,45 @@ def test_extract_date_found():
     """Test extracting date when the element is found."""
     mock_card = Mock(spec=WebElement)
     mock_date_element = Mock(spec=WebElement)
-    mock_date_element.text = "yesterday"
+    mock_date_element.text = "Posted 6 days ago"
     mock_card.find_element.return_value = mock_date_element
 
-    with pytest.MonkeyPatch.context() as monkeypatch:
-        expected_datetime_yesterday = datetime.now() - timedelta(days=1)
+    date = _extract_date(mock_card, ".date", "Test Site")
+    assert date == "Posted 6 days ago"
+    mock_card.find_element.assert_called_once_with(By.CSS_SELECTOR, ".date")
 
-        def mock_parse_date_string_with_element(date_str, date_element=None):
-            if date_str == "yesterday":
-                return expected_datetime_yesterday
-            return datetime.now()
 
-        monkeypatch.setattr(
-            scraper, "parse_date_string", mock_parse_date_string_with_element
-        )
+def test_extract_date_various_formats():
+    """Test extracting date with various relative date formats."""
+    test_cases = [
+        "Posted 1 day ago",
+        "Posted 7 days ago",
+        "Posted 9 days ago",
+        "Posted yesterday",
+        "Posted 2 hours ago",
+        "Posted 30 minutes ago",
+        "Posted 3 weeks ago",
+        "Posted 1 month ago",
+    ]
+
+    for date_text in test_cases:
+        mock_card = Mock(spec=WebElement)
+        mock_date_element = Mock(spec=WebElement)
+        mock_date_element.text = date_text
+        mock_card.find_element.return_value = mock_date_element
 
         date = _extract_date(mock_card, ".date", "Test Site")
-        assert date.date() == expected_datetime_yesterday.date()
-        mock_card.find_element.assert_called_once_with(By.CSS_SELECTOR, ".date")
+        assert date == date_text
+        mock_card.find_element.assert_called_with(By.CSS_SELECTOR, ".date")
 
 
 def test_extract_date_not_found():
-    """Test extracting date when the element is not found (should default to today's date)."""
+    """Test extracting date when the element is not found (should default to 'Recently')."""
     mock_card = Mock(spec=WebElement)
     mock_card.find_element.side_effect = NoSuchElementException(
         "Mock: Date element not found"
     )
 
-    with pytest.MonkeyPatch.context() as monkeypatch:
-        # No need for expected_now_datetime here, it was unused and removed.
-        # The test directly asserts _extract_date's return when NoSuchElementException occurs.
-        # We still mock parse_date_string for the sake of the test environment setup,
-        # but in this specific branch of _extract_date, parse_date_string is not called.
-        def mock_parse_date_string_with_element(date_str, date_element=None):
-            # This mock won't be called in this specific test path, but it's good to define it
-            # consistently with how it's set up in other date tests.
-            return datetime.now()
-
-        monkeypatch.setattr(
-            scraper, "parse_date_string", mock_parse_date_string_with_element
-        )
-
-        date = _extract_date(mock_card, ".date", "Test Site")
-        assert date.date() == datetime.now().date()
-        mock_card.find_element.assert_called_once_with(By.CSS_SELECTOR, ".date")
-        # Removed assertion for parse_date_string as it's not called in this branch
+    date = _extract_date(mock_card, ".date", "Test Site")
+    assert date == "Recently"
+    mock_card.find_element.assert_called_once_with(By.CSS_SELECTOR, ".date")
