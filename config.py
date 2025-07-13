@@ -27,6 +27,10 @@ class WebsiteConfig:
 
     # Wuzzuf configuration (from previous successful scrapes)
     WUZZUF_URL = os.getenv("WUZZUF_URL", "https://wuzzuf.net/a/devops-jobs-in-egypt")
+    WUZZUF_URL_IT = os.getenv(
+        "WUZZUF_URL_IT",
+        "https://wuzzuf.net/search/jobs/?a=navbg&filters%5Bpost_date%5D%5B0%5D=within_1_week&q=it",
+    )
     WUZZUF_JOB_CARD_SELECTOR = os.getenv(
         "WUZZUF_JOB_CARD_SELECTOR", "div.css-1gatmva.e1v1l3u10"
     )
@@ -39,9 +43,9 @@ class WebsiteConfig:
         "WUZZUF_TAGS_SELECTOR",
         ("div.css-y4udm8 a[class^='css-'], " "div.css-y4udm8 span.eoyjyou0"),
     )
-    WUZZUF_DATE_SELECTOR = os.getenv("WUZZUF_DATE_SELECTOR", "div.css-d7j1kk > div")
+    WUZZUF_DATE_SELECTOR = os.getenv("WUZZUF_DATE_SELECTOR", "span.css-4c4ojb")
 
-    # NaukriGulf configuration
+    """ # NaukriGulf configuration
     NAUKRIGULF_URL = os.getenv(
         "NAUKRIGULF_URL", "https://www.naukrigulf.com/devops-jobs"
     )
@@ -89,7 +93,7 @@ class WebsiteConfig:
     BAYT_TAGS_SELECTOR = os.getenv("BAYT_TAGS_SELECTOR", "")
     BAYT_DATE_SELECTOR = os.getenv(
         "BAYT_DATE_SELECTOR", 'span[data-automation-id="job-active-date"]'
-    )
+    )"""
 
 
 class ScraperConfig:
@@ -99,17 +103,31 @@ class ScraperConfig:
         os.getenv(
             "JOB_KEYWORDS",
             "DevOps Engineer,SRE,Cloud Engineer,Site Reliability Engineer,"
-            "Platform Engineer,Infrastructure Engineer",
+            "Platform Engineer,Infrastructure Engineer,"
+            "IT,System Administrator,IT Support,IT Manager,IT Director,"
+            "IT Consultant,IT Analyst,Engineer,Developer,Specialist,"
+            "Administrator,Support,Manager,Consultant,Analyst,"
+            "Technical,Technology,Software,Hardware,Network,"
+            "System,Security,Database,Web,Application,"
+            "Computer,Information,Digital,Technical Support,"
+            "Help Desk,Support Specialist,Technical Specialist",
         ).split(",")
     )
     JOB_TITLE_KEYWORDS = list(
         os.getenv(
             "JOB_TITLE_KEYWORDS",
-            "DevOps,SRE,Cloud,Site Reliability,Platform,Infrastructure",
+            "DevOps,SRE,Cloud,Site Reliability,Platform,Infrastructure,"
+            "IT,System Administrator,IT Support,IT Manager,IT Director,"
+            "IT Consultant,IT Analyst,Engineer,Developer,Specialist,"
+            "Administrator,Support,Manager,Consultant,Analyst,"
+            "Technical,Technology,Software,Hardware,Network,"
+            "System,Security,Database,Web,Application,"
+            "Computer,Information,Digital,Technical Support,"
+            "Help Desk,Support Specialist,Technical Specialist",
         ).split(",")
     )
 
-    MAX_JOB_AGE_DAYS = int(os.getenv("MAX_JOB_AGE_DAYS", 1))
+    MAX_JOB_AGE_DAYS = int(os.getenv("MAX_JOB_AGE_DAYS", 7))
     POSTED_JOBS_FILE = os.getenv("POSTED_JOBS_FILE", "posted_jobs.txt")
     MAX_SCROLL_PAUSES = int(os.getenv("MAX_SCROLL_PAUSES", 5))
     SCROLL_PAUSE_TIME = int(os.getenv("SCROLL_PAUSE_TIME", 2))
@@ -156,35 +174,45 @@ WEBSITE_CONFIGS = [
         "date_selector": WebsiteConfig.WUZZUF_DATE_SELECTOR,
     },
     {
-        "name": "NaukriGulf",
-        "url": WebsiteConfig.NAUKRIGULF_URL,
-        "job_card_selector": WebsiteConfig.NAUKRIGULF_JOB_CARD_SELECTOR,
-        "title_selector": WebsiteConfig.NAUKRIGULF_TITLE_SELECTOR,
-        "link_selector": WebsiteConfig.NAUKRIGULF_LINK_SELECTOR,
-        "description_selector": WebsiteConfig.NAUKRIGULF_DESCRIPTION_SELECTOR,
-        "tags_selector": WebsiteConfig.NAUKRIGULF_TAGS_SELECTOR,
-        "date_selector": WebsiteConfig.NAUKRIGULF_DATE_SELECTOR,
+        "name": "Wuzzuf IT",
+        "url": WebsiteConfig.WUZZUF_URL_IT,
+        "job_card_selector": WebsiteConfig.WUZZUF_JOB_CARD_SELECTOR,
+        "title_selector": WebsiteConfig.WUZZUF_TITLE_SELECTOR,
+        "link_selector": WebsiteConfig.WUZZUF_LINK_SELECTOR,
+        "description_selector": WebsiteConfig.WUZZUF_DESCRIPTION_SELECTOR,
+        "tags_selector": WebsiteConfig.WUZZUF_TAGS_SELECTOR,
+        "date_selector": WebsiteConfig.WUZZUF_DATE_SELECTOR,
     },
-    {
-        "name": "Forasna",
-        "url": WebsiteConfig.FORASNA_URL,
-        "job_card_selector": WebsiteConfig.FORASNA_JOB_CARD_SELECTOR,
-        "title_selector": WebsiteConfig.FORASNA_TITLE_SELECTOR,
-        "link_selector": WebsiteConfig.FORASNA_LINK_SELECTOR,
-        "description_selector": WebsiteConfig.FORASNA_DESCRIPTION_SELECTOR,
-        "tags_selector": WebsiteConfig.FORASNA_TAGS_SELECTOR,
-        "date_selector": WebsiteConfig.FORASNA_DATE_SELECTOR,
-    },
-    {
-        "name": "Bayt",
-        "url": WebsiteConfig.BAYT_URL,
-        "job_card_selector": WebsiteConfig.BAYT_JOB_CARD_SELECTOR,
-        "title_selector": WebsiteConfig.BAYT_TITLE_SELECTOR,
-        "link_selector": WebsiteConfig.BAYT_LINK_SELECTOR,
-        "description_selector": WebsiteConfig.BAYT_DESCRIPTION_SELECTOR,
-        "tags_selector": WebsiteConfig.BAYT_TAGS_SELECTOR,
-        "date_selector": WebsiteConfig.BAYT_DATE_SELECTOR,
-    },
+    # {
+    #     "name": "NaukriGulf",
+    #     "url": WebsiteConfig.NAUKRIGULF_URL,
+    #     "job_card_selector": WebsiteConfig.NAUKRIGULF_JOB_CARD_SELECTOR,
+    #     "title_selector": WebsiteConfig.NAUKRIGULF_TITLE_SELECTOR,
+    #     "link_selector": WebsiteConfig.NAUKRIGULF_LINK_SELECTOR,
+    #     "description_selector": WebsiteConfig.NAUKRIGULF_DESCRIPTION_SELECTOR,
+    #     "tags_selector": WebsiteConfig.NAUKRIGULF_TAGS_SELECTOR,
+    #     "date_selector": WebsiteConfig.NAUKRIGULF_DATE_SELECTOR,
+    # },
+    # {
+    #     "name": "Forasna",
+    #     "url": WebsiteConfig.FORASNA_URL,
+    #     "job_card_selector": WebsiteConfig.FORASNA_JOB_CARD_SELECTOR,
+    #     "title_selector": WebsiteConfig.FORASNA_TITLE_SELECTOR,
+    #     "link_selector": WebsiteConfig.FORASNA_LINK_SELECTOR,
+    #     "description_selector": WebsiteConfig.FORASNA_DESCRIPTION_SELECTOR,
+    #     "tags_selector": WebsiteConfig.FORASNA_TAGS_SELECTOR,
+    #     "date_selector": WebsiteConfig.FORASNA_DATE_SELECTOR,
+    # },
+    # {
+    #     "name": "Bayt",
+    #     "url": WebsiteConfig.BAYT_URL,
+    #     "job_card_selector": WebsiteConfig.BAYT_JOB_CARD_SELECTOR,
+    #     "title_selector": WebsiteConfig.BAYT_TITLE_SELECTOR,
+    #     "link_selector": WebsiteConfig.BAYT_LINK_SELECTOR,
+    #     "description_selector": WebsiteConfig.BAYT_DESCRIPTION_SELECTOR,
+    #     "tags_selector": WebsiteConfig.BAYT_TAGS_SELECTOR,
+    #     "date_selector": WebsiteConfig.BAYT_DATE_SELECTOR,
+    # },
 ]
 
 SCRAPER_SETTINGS = {
@@ -192,13 +220,27 @@ SCRAPER_SETTINGS = {
         os.getenv(
             "JOB_KEYWORDS",
             "DevOps Engineer,SRE,Cloud Engineer,Site Reliability Engineer,"
-            "Platform Engineer,Infrastructure Engineer",
+            "Platform Engineer,Infrastructure Engineer,"
+            "IT,System Administrator,IT Support,IT Manager,IT Director,"
+            "IT Consultant,IT Analyst,Engineer,Developer,Specialist,"
+            "Administrator,Support,Manager,Consultant,Analyst,"
+            "Technical,Technology,Software,Hardware,Network,"
+            "System,Security,Database,Web,Application,"
+            "Computer,Information,Digital,Technical Support,"
+            "Help Desk,Support Specialist,Technical Specialist",
         ).split(",")
     ),
     "job_title_keywords": list(
         os.getenv(
             "JOB_TITLE_KEYWORDS",
-            "DevOps,SRE,Cloud,Site Reliability,Platform,Infrastructure",
+            "DevOps,SRE,Cloud,Site Reliability,Platform,Infrastructure,"
+            "IT,System Administrator,IT Support,IT Manager,IT Director,"
+            "IT Consultant,IT Analyst,Engineer,Developer,Specialist,"
+            "Administrator,Support,Manager,Consultant,Analyst,"
+            "Technical,Technology,Software,Hardware,Network,"
+            "System,Security,Database,Web,Application,"
+            "Computer,Information,Digital,Technical Support,"
+            "Help Desk,Support Specialist,Technical Specialist",
         ).split(",")
     ),
     "posted_jobs_file": os.getenv("POSTED_JOBS_FILE", "posted_jobs.txt"),

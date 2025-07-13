@@ -1,5 +1,6 @@
 import logging
 import re
+import time
 from datetime import datetime, timedelta
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
@@ -319,26 +320,55 @@ def _extract_tags(card: WebElement, selector: str | None, site_name: str) -> lis
         return []
 
 
-def _extract_date(card: WebElement, selector: str | None, site_name: str) -> datetime:
-    """Extracts job posted date from the card."""
+def enhance_job_dates_from_pages(driver: uc.Chrome, jobs: list, site_name: str) -> list:
+    """Enhance job dates by visiting job pages for jobs that show 'Recently'."""
+    enhanced_jobs = []
+
+    for job in jobs:
+        if job.get("posted_date") == "Recently":
+            try:
+                logger.debug(f"Enhancing date for job: {job.get('title', 'Unknown')}")
+                driver.get(job["link"])
+
+                # Wait for the date element to appear
+                date_elem = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, ".css-182mrdn"))
+                )
+
+                enhanced_date = date_elem.text.strip()
+                job["posted_date"] = enhanced_date
+                logger.debug(f"Enhanced date: {enhanced_date}")
+
+            except Exception as e:
+                logger.warning(f"Error enhancing date for job on {site_name}: {e}")
+                # Keep the original 'Recently' date
+
+        enhanced_jobs.append(job)
+
+    return enhanced_jobs
+
+
+def _extract_date(card: WebElement, selector: str | None, site_name: str) -> str:
+    """Extracts job posted date from the card as relative text."""
     if not selector:
-        return datetime.now()
+        return "Recently"
     try:
         date_element = card.find_element(By.CSS_SELECTOR, selector)
         date_text = date_element.text.strip()
-        return parse_date_string(date_text, date_element=date_element)
+        # Return the relative date text directly (e.g., "Posted 6 days ago")
+        return date_text
     except NoSuchElementException:
         logger.debug(
             f"Posted date not found on {site_name} for a job card. "
-            "Defaulting to current time."
+            "Defaulting to 'Recently'."
         )
-        return datetime.now()
+        return "Recently"
     except Exception as e:
         logger.warning(
             f"Error parsing date on {site_name} for a job card: {e}. "
-            "Defaulting to current time."
+            "Defaulting to 'Recently'."
         )
-        return datetime.now()
+        return "Recently"
 
 
 def _extract_job_details_from_card(
@@ -378,7 +408,7 @@ def _extract_job_details_from_card(
             "description": description,
             "source": site_name,
             "tags": tags,
-            "posted_date": posted_date.isoformat(),
+            "posted_date": posted_date,
         }
 
     except NoSuchElementException as e:
@@ -412,9 +442,9 @@ def scrape_jobs_from_website(driver: uc.Chrome, website_config: dict) -> list:
     """
     Navigates to a specified website and scrapes job postings based on its
     configuration. Utilizes WebDriverWait for robust element location,
-    accounting for dynamic content loading.
+    accounting for dynamic content loading and pagination.
     """
-    jobs = []
+    jobs: list = []
     url = website_config["url"]
     site_name = website_config["name"]
     job_card_selector = website_config["job_card_selector"]
@@ -428,18 +458,12 @@ def scrape_jobs_from_website(driver: uc.Chrome, website_config: dict) -> list:
         )
         logger.debug(f"Successfully loaded and found job cards on {site_name}.")
 
-        job_cards = driver.find_elements(By.CSS_SELECTOR, job_card_selector)
-        if not job_cards:
-            logger.warning(
-                f"No job cards found using selector '{job_card_selector}' on "
-                f"{site_name}. This might indicate a selector issue or no jobs."
-            )
-            return []
-
-        for card in job_cards:
-            job_details = _extract_job_details_from_card(card, website_config)
-            if job_details:
-                jobs.append(job_details)
+        # Handle pagination for Wuzzuf sites
+        if "wuzzuf.net" in url:
+            jobs = _scrape_wuzzuf_with_pagination(driver, website_config)
+        else:
+            # For other sites, use the original scrolling method
+            jobs = _scrape_single_page_with_scroll(driver, website_config)
 
     except TimeoutException:
         logger.error(
@@ -456,6 +480,171 @@ def scrape_jobs_from_website(driver: uc.Chrome, website_config: dict) -> list:
         )
 
     logger.info(f"Finished scraping {len(jobs)} jobs from {site_name}.")
+
+    # Enhance dates for jobs that show 'Recently'
+    if jobs and "wuzzuf.net" in url:
+        logger.info(f"Enhancing dates for {site_name} jobs...")
+        jobs = enhance_job_dates_from_pages(driver, jobs, site_name)
+        logger.info(f"Date enhancement completed for {site_name}")
+
+    return jobs
+
+
+def _scrape_single_page_with_scroll(driver: uc.Chrome, website_config: dict) -> list:
+    """Scrapes jobs from a single page using scrolling to load more content."""
+    jobs: list = []
+    site_name = website_config["name"]
+    job_card_selector = website_config["job_card_selector"]
+
+    # Scroll to load more jobs
+    from config import ScraperConfig
+
+    max_scroll_pauses = ScraperConfig.MAX_SCROLL_PAUSES
+    scroll_pause_time = ScraperConfig.SCROLL_PAUSE_TIME
+
+    for scroll_attempt in range(max_scroll_pauses):
+        # Scroll to bottom to load more content
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(scroll_pause_time)
+
+        # Check if new jobs were loaded
+        current_job_cards = driver.find_elements(By.CSS_SELECTOR, job_card_selector)
+        logger.debug(
+            f"Scroll attempt {scroll_attempt + 1}: Found {len(current_job_cards)} job cards"
+        )
+
+        if len(current_job_cards) > len(jobs):
+            logger.debug(f"New jobs loaded after scroll {scroll_attempt + 1}")
+        else:
+            logger.debug(f"No new jobs loaded after scroll {scroll_attempt + 1}")
+
+    job_cards = driver.find_elements(By.CSS_SELECTOR, job_card_selector)
+    if not job_cards:
+        logger.warning(
+            f"No job cards found using selector '{job_card_selector}' on "
+            f"{site_name}. This might indicate a selector issue or no jobs."
+        )
+        return []
+
+    for card in job_cards:
+        job_details = _extract_job_details_from_card(card, website_config)
+        if job_details:
+            jobs.append(job_details)
+
+    return jobs
+
+
+def _try_css_next_button(driver: uc.Chrome) -> bool:
+    """Try to find and click next button using CSS selectors."""
+    next_page_selectors = [
+        "button.css-zye1os a.css-1fcv3il",  # Exact Wuzzuf next button structure
+        "button.css-zye1os a",  # Button with link inside
+        "a.css-1fcv3il",  # Direct link with Wuzzuf class
+        "button[class*='css-zye1os'] a",  # Button with CSS class containing css-zye1os
+        "a[aria-label='Next']",
+        "a.next",
+        "a[rel='next']",
+        "button[aria-label='Next']",
+        ".pagination a:last-child",
+        "a[data-testid='pagination-next']",
+        "a[data-testid='next']",
+        "a[aria-label='التالي']",  # Arabic next
+        "button[aria-label='التالي']",  # Arabic next button
+    ]
+
+    for selector in next_page_selectors:
+        try:
+            next_button = driver.find_element(By.CSS_SELECTOR, selector)
+            if next_button.is_enabled() and next_button.is_displayed():
+                class_attr = next_button.get_attribute("class")
+                if class_attr and "disabled" not in class_attr.lower():
+                    next_button.click()
+                    time.sleep(3)  # Wait for page to load
+                    return True
+        except NoSuchElementException:
+            continue
+    return False
+
+
+def _try_xpath_next_button(driver: uc.Chrome) -> bool:
+    """Try to find and click next button using XPath text search."""
+    try:
+        next_links = driver.find_elements(
+            By.XPATH,
+            "//a[contains(text(), 'Next') or contains(text(), 'التالي')]",
+        )
+        for link in next_links:
+            if link.is_enabled() and link.is_displayed():
+                class_attr = link.get_attribute("class")
+                if class_attr and "disabled" not in class_attr.lower():
+                    link.click()
+                    time.sleep(3)
+                    return True
+    except Exception:
+        pass
+    return False
+
+
+def _find_next_page_button(driver: uc.Chrome) -> bool:
+    """Attempts to find and click the next page button. Returns True if successful."""
+    # Try CSS selectors first
+    if _try_css_next_button(driver):
+        return True
+
+    # If CSS selectors failed, try XPath for text-based search
+    return _try_xpath_next_button(driver)
+
+
+def _scrape_wuzzuf_with_pagination(driver: uc.Chrome, website_config: dict) -> list:
+    """Scrapes jobs from Wuzzuf using pagination to get all pages."""
+    jobs = []
+    site_name = website_config["name"]
+    job_card_selector = website_config["job_card_selector"]
+
+    page = 1
+    max_pages = 50  # Safety limit to prevent infinite loops
+
+    while page <= max_pages:
+        logger.info(f"Scraping page {page} from {site_name}")
+
+        # Wait for job cards to load
+        try:
+            WebDriverWait(driver, 20).until(
+                EC.presence_of_all_elements_located(
+                    (By.CSS_SELECTOR, job_card_selector)
+                )
+            )
+        except TimeoutException:
+            logger.warning(f"Timeout waiting for job cards on page {page}")
+            break
+
+        # Get job cards from current page
+        job_cards = driver.find_elements(By.CSS_SELECTOR, job_card_selector)
+        if not job_cards:
+            logger.warning(f"No job cards found on page {page}")
+            break
+
+        # Extract jobs from current page
+        page_jobs = 0
+        for card in job_cards:
+            job_details = _extract_job_details_from_card(card, website_config)
+            if job_details:
+                jobs.append(job_details)
+                page_jobs += 1
+
+        logger.info(f"Found {page_jobs} jobs on page {page}")
+
+        # Try to go to next page
+        if not _find_next_page_button(driver):
+            logger.info(f"No more pages found after page {page}")
+            break
+
+        page += 1
+        time.sleep(2)  # Brief pause between pages
+
+    logger.info(
+        f"Completed pagination scraping: {len(jobs)} total jobs from {page-1} pages"
+    )
     return jobs
 
 
