@@ -354,7 +354,7 @@ def _extract_date(card: WebElement, selector: str | None, site_name: str) -> str
         return "Recently"
     try:
         date_element = card.find_element(By.CSS_SELECTOR, selector)
-        date_text = date_element.text.strip()
+        date_text: str = str(date_element.text.strip())
         # Return the relative date text directly (e.g., "Posted 6 days ago")
         return date_text
     except NoSuchElementException:
