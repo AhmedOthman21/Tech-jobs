@@ -1,14 +1,12 @@
 import logging
 import random
 import time
+
 import undetected_chromedriver as uc
+from selenium.common.exceptions import NoSuchElementException, WebDriverException
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.common.exceptions import (
-    WebDriverException,
-    NoSuchElementException,
-)
 
 logger = logging.getLogger(__name__)
 

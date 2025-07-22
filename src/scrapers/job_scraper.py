@@ -6,6 +6,7 @@ It imports and re-exports functions from the specialized modules.
 """
 
 import logging
+
 import undetected_chromedriver as uc
 
 from src.scrapers.scraping_logic import (

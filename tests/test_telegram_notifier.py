@@ -1,9 +1,11 @@
+from unittest.mock import AsyncMock, mock_open, patch
+
 import pytest
-from unittest.mock import patch, mock_open, AsyncMock
 import telegram
+
 from src.utils.telegram_notifier import (
-    load_posted_job_links,
     add_posted_job_link,
+    load_posted_job_links,
     send_telegram_message,
 )
 

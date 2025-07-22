@@ -1,21 +1,19 @@
 import logging
 import time
-import undetected_chromedriver as uc
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import (
-    TimeoutException,
-    NoSuchElementException,
-)
 
+import undetected_chromedriver as uc
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
+from src.data_extractors.data_extractors import _extract_job_details_from_card
 from src.utils.browser_utils import (
-    random_delay,
-    human_like_mouse_movement,
     detect_blocking,
+    human_like_mouse_movement,
+    random_delay,
     restart_driver_on_block,
 )
-from src.data_extractors.data_extractors import _extract_job_details_from_card
 
 logger = logging.getLogger(__name__)
 

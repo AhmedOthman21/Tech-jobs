@@ -2,22 +2,22 @@ import asyncio
 import logging
 import random
 import time
-from typing import List, Dict, Set
+from typing import Dict, List, Set
 
 from config import (
+    GENERAL_SETTINGS,
     LOGGER_SETTINGS,
     SCRAPER_SETTINGS,
-    WEBSITE_CONFIGS,
     TELEGRAM_SETTINGS,
-    GENERAL_SETTINGS,
+    WEBSITE_CONFIGS,
 )
 from src.scrapers.scraper import scrape_jobs_from_website
+from src.utils.browser_utils import get_selenium_driver
 from src.utils.telegram_notifier import (
-    load_posted_job_links,
     add_posted_job_link,
+    load_posted_job_links,
     send_telegram_message,
 )
-from src.utils.browser_utils import get_selenium_driver
 
 
 # Setup logging based on configurations

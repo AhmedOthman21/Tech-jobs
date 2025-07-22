@@ -1,8 +1,10 @@
 from datetime import datetime
 from unittest.mock import Mock
+
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
+
 from src.scrapers import scraper
 
 parse_date_string = scraper.parse_date_string

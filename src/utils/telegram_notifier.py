@@ -1,11 +1,11 @@
-import telegram
 import html
 import logging
 import os  # Import os for file path checks
 
-# Import tenacity
-from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
+import telegram
 
+# Import tenacity
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 # Set up logging for this module
 logger = logging.getLogger(__name__)
