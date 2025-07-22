@@ -1,9 +1,10 @@
 import logging
 import re
 from datetime import datetime, timedelta
+
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.common.exceptions import NoSuchElementException
 
 logger = logging.getLogger(__name__)
 
