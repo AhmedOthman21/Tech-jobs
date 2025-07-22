@@ -5,7 +5,7 @@ undetected-chromedriver==3.5.3
 python-dotenv==1.0.1
 black==25.1.0
 flake8==7.1.0
-tenacity==8.2.3
+tenacity==9.1.2
 mypy==1.10.0
 pytest==8.2.2
 pytest-asyncio==0.21.1
