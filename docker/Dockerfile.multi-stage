@@ -25,10 +25,15 @@ RUN apk add --no-cache \
     ca-certificates \
     ttf-freefont
 
+# Add a non-root user and switch to it
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+
 # Set environment variables for Chromium
 ENV CHROME_BIN=/usr/bin/chromium-browser
 ENV CHROME_PATH=/usr/lib/chromium/
 ENV POSTED_JOBS_FILE="posted_jobs.txt"
+ENV PATH="$PATH:/root/.local/bin"
 
 # Copy Python packages from builder stage
 COPY --from=builder /root/.local /root/.local
@@ -39,7 +44,4 @@ WORKDIR /app
 # Copy application code
 COPY . .
 
-# Add local bin to PATH
-ENV PATH=/root/.local/bin:$PATH
-
-CMD ["python", "main.py"] 
+CMD ["python", "main.py"]
