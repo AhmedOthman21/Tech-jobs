@@ -39,7 +39,13 @@ ENV CHROME_BIN=/usr/bin/chromium-browser
 ENV CHROME_PATH=/usr/lib/chromium/
 ENV POSTED_JOBS_FILE="posted_jobs.txt"
 
-# Change permissions of the /app directory to ensure all users can read and execute files
+# Create the /app directory and set ownership to appuser and appgroup
+RUN mkdir -p /app && chown -R appuser:appgroup /app
+
+# Switch to the appuser user
+USER appuser
+
+# Change permissions of the /app directory
 RUN chmod -R 755 /app
 
 # CMD instruction is omitted here. The execution command will be explicitly defined
