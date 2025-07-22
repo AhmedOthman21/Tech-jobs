@@ -1,0 +1,6 @@
+sphinx==7.2.6
+sphinx-rtd-theme==2.0.0
+sphinxcontrib-napoleon==0.7
+pytest==7.4.3
+isort==5.13.2
+pre-commit==3.5.0 

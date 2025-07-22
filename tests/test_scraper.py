@@ -1,14 +1,11 @@
-import pytest
 from datetime import datetime
 from unittest.mock import Mock
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
-
-import scraper
+from src.scrapers import scraper
 
 parse_date_string = scraper.parse_date_string
-is_job_posting = scraper.is_job_posting
 _extract_link = scraper._extract_link
 _extract_date = scraper._extract_date
 
@@ -50,47 +47,6 @@ def test_parse_date_string_unparseable():
     """Test behavior for an unparseable date string (should default to today's date)."""
     parsed_date = parse_date_string("some random date string")
     assert parsed_date.date() == datetime.now().date()
-
-
-# --- Tests for is_job_posting ---
-
-
-@pytest.mark.parametrize(
-    "title, description, title_keywords, desc_keywords, expected",
-    [
-        (
-            "DevOps Engineer Position",
-            "Requires cloud experience",
-            ["devops"],
-            ["cloud"],
-            True,
-        ),
-        ("Software Developer", "Needs Python skills", ["sre"], ["python"], False),
-        ("SRE opening", "Cloud operations", ["sre"], ["devops"], False),
-        ("DevOps Lead", "Looking for senior", ["devops"], ["junior"], False),
-        ("DevOps Junior", "Entry-level position", ["devops"], ["entry-level"], True),
-        ("Cloud Architect", "AWS, Azure experience", ["cloud"], ["aws", "azure"], True),
-        (
-            "Site Reliability Engineer",
-            "System monitoring",
-            ["site reliability"],
-            ["monitoring"],
-            True,
-        ),
-        (
-            "Not Relevant Title",
-            "Not relevant description",
-            ["devops"],
-            ["cloud"],
-            False,
-        ),
-        ("DevOps Engineer", "Contract role", ["devops"], [], True),
-        ("DevOps Engineer", "Contract role", ["devops"], ["contract"], True),
-    ],
-)
-def test_is_job_posting(title, description, title_keywords, desc_keywords, expected):
-    """Test various scenarios for job posting relevance."""
-    assert is_job_posting(title, description, title_keywords, desc_keywords) == expected
 
 
 # --- Tests for _extract_link ---

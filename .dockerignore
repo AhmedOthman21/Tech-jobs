@@ -42,6 +42,10 @@ Thumbs.db
 # Documentation
 README.md
 *.md
+docs/
+THIRD_PARTY_NOTICES.chromedriver
+LICENSE.chromedriver
+posted_jobs.txt
 
 # Tests
 tests/
