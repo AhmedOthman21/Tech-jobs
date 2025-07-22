@@ -30,14 +30,8 @@ RUN apk add --no-cache --virtual .build-deps gcc musl-dev libffi-dev && \
 # This should be done after dependencies to maximize caching efficiency.
 COPY . .
 
-# Add a non-root user and switch to it
+# Add a non-root user and group
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-USER appuser
-
-# Set environment variables for Chromium to work properly in Alpine
-ENV CHROME_BIN=/usr/bin/chromium-browser
-ENV CHROME_PATH=/usr/lib/chromium/
-ENV POSTED_JOBS_FILE="posted_jobs.txt"
 
 # Create the /app directory and set ownership to appuser and appgroup
 RUN mkdir -p /app && chown -R appuser:appgroup /app
@@ -45,8 +39,10 @@ RUN mkdir -p /app && chown -R appuser:appgroup /app
 # Switch to the appuser user
 USER appuser
 
-# Change permissions of the /app directory
-RUN chmod -R 755 /app
+# Set environment variables for Chromium to work properly in Alpine
+ENV CHROME_BIN=/usr/bin/chromium-browser
+ENV CHROME_PATH=/usr/lib/chromium/
+ENV POSTED_JOBS_FILE="posted_jobs.txt"
 
 # CMD instruction is omitted here. The execution command will be explicitly defined
 # in the GitHub Actions workflow using `docker run` to provide maximum flexibility
