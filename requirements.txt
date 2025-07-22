@@ -1,4 +1,4 @@
-beautifulsoup4==4.12.3
+beautifulsoup4==4.13.4
 selenium==4.22.0
 python-telegram-bot==21.3
 undetected-chromedriver==3.5.3
