@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch, mock_open, AsyncMock
 import telegram
-from telegram_notifier import (
+from src.utils.telegram_notifier import (
     load_posted_job_links,
     add_posted_job_link,
     send_telegram_message,
@@ -48,7 +48,7 @@ def test_add_posted_job_link():
 
 # Test send_telegram_message (Requires async mocking)
 @pytest.mark.asyncio
-@patch("telegram_notifier.telegram.Bot")
+@patch("src.utils.telegram_notifier.telegram.Bot")
 async def test_send_telegram_message_success(mock_bot_class):
     """Test successful sending of a Telegram message."""
     mock_bot_instance = AsyncMock()
@@ -77,7 +77,7 @@ async def test_send_telegram_message_success(mock_bot_class):
 
 
 @pytest.mark.asyncio
-@patch("telegram_notifier.telegram.Bot")
+@patch("src.utils.telegram_notifier.telegram.Bot")
 async def test_send_telegram_message_too_long(mock_bot_class):
     """Test handling of message too long error."""
     mock_bot_instance = AsyncMock()
@@ -103,7 +103,7 @@ async def test_send_telegram_message_too_long(mock_bot_class):
 
 
 @pytest.mark.asyncio
-@patch("telegram_notifier.telegram.Bot")
+@patch("src.utils.telegram_notifier.telegram.Bot")
 async def test_send_telegram_message_chat_not_found(mock_bot_class):
     """Test handling of chat not found error (non-retriable)."""
     mock_bot_instance = AsyncMock()
@@ -128,7 +128,7 @@ async def test_send_telegram_message_chat_not_found(mock_bot_class):
 
 
 @pytest.mark.asyncio
-@patch("telegram_notifier.telegram.Bot")
+@patch("src.utils.telegram_notifier.telegram.Bot")
 async def test_send_telegram_message_network_error_retries(mock_bot_class):
     """Test that transient network errors trigger retries."""
     mock_bot_instance = AsyncMock()
@@ -159,7 +159,7 @@ async def test_send_telegram_message_network_error_retries(mock_bot_class):
 
 
 @pytest.mark.asyncio
-@patch("telegram_notifier.telegram.Bot")
+@patch("src.utils.telegram_notifier.telegram.Bot")
 async def test_send_telegram_message_with_date(mock_bot_class):
     """Test sending a Telegram message with date included."""
     mock_bot_instance = AsyncMock()
@@ -187,7 +187,7 @@ async def test_send_telegram_message_with_date(mock_bot_class):
 
 
 @pytest.mark.asyncio
-@patch("telegram_notifier.telegram.Bot")
+@patch("src.utils.telegram_notifier.telegram.Bot")
 async def test_send_telegram_message_without_date(mock_bot_class):
     """Test sending a Telegram message without date included."""
     mock_bot_instance = AsyncMock()

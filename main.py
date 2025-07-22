@@ -11,12 +11,13 @@ from config import (
     TELEGRAM_SETTINGS,
     GENERAL_SETTINGS,
 )
-from scraper import get_selenium_driver, scrape_jobs_from_website, is_job_posting
-from telegram_notifier import (
+from src.scrapers.scraper import scrape_jobs_from_website
+from src.utils.telegram_notifier import (
     load_posted_job_links,
     add_posted_job_link,
     send_telegram_message,
 )
+from src.utils.browser_utils import get_selenium_driver
 
 
 # Setup logging based on configurations
@@ -35,43 +36,63 @@ def process_scraped_jobs(
     all_scraped_jobs: List[Dict], already_posted_links: Set[str]
 ) -> List[Dict]:
     """
-    Filters scraped jobs for new and relevant postings.
+    Filters scraped jobs to remove duplicates.
     """
     logger = logging.getLogger(__name__)
-    new_relevant_jobs = []
+    new_jobs = []
     for job in all_scraped_jobs:
         if job["link"] not in already_posted_links:
-            if is_job_posting(
-                job.get("title", ""),
-                job.get("description", ""),
-                list(SCRAPER_SETTINGS["job_title_keywords"]),
-                list(SCRAPER_SETTINGS["job_keywords"]),
-            ):
-                new_relevant_jobs.append(job)
-                already_posted_links.add(job["link"])
-            else:
-                logger.debug(f"Job '{job.get('title')}' is not relevant.")
+            new_jobs.append(job)
+            already_posted_links.add(job["link"])
         else:
             logger.debug(f"Job '{job.get('title')}' already posted. Skipping.")
-    return new_relevant_jobs
+    return new_jobs
 
 
 async def notify_new_jobs(new_jobs: List[Dict], posted_jobs_file: str) -> None:
     """
     Sends new job postings to Telegram and records them.
+    Uses adaptive delays to avoid rate limits.
     """
     logger = logging.getLogger(__name__)
     if TELEGRAM_SETTINGS["bot_token"] and TELEGRAM_SETTINGS["chat_id"]:
-        for job in new_jobs:
-            success = await send_telegram_message(
-                str(TELEGRAM_SETTINGS["bot_token"] or ""),
-                str(TELEGRAM_SETTINGS["chat_id"] or ""),
-                job,
-                bool(TELEGRAM_SETTINGS["include_date_in_message"]),
-            )
-            if success:
-                add_posted_job_link(posted_jobs_file, job["link"])
-            await asyncio.sleep(1)  # Delay between messages to avoid rate limits
+        base_delay = 3  # Start with 3 second delay
+        for i, job in enumerate(new_jobs):
+            try:
+                success = await send_telegram_message(
+                    str(TELEGRAM_SETTINGS["bot_token"] or ""),
+                    str(TELEGRAM_SETTINGS["chat_id"] or ""),
+                    job,
+                    bool(TELEGRAM_SETTINGS["include_date_in_message"]),
+                )
+                if success:
+                    add_posted_job_link(posted_jobs_file, job["link"])
+
+                # Adaptive delay: increase if we're sending many messages
+                if i > 0 and i % 10 == 0:
+                    base_delay = min(base_delay + 2, 10)  # Increase delay up to max 10s
+                await asyncio.sleep(base_delay)  # Adaptive delay between messages
+
+            except Exception as e:
+                if "RetryAfter" in str(e):
+                    retry_after = int(str(e).split()[-2])  # Extract seconds from error
+                    logger.info(f"Rate limit hit, waiting {retry_after} seconds...")
+                    await asyncio.sleep(
+                        retry_after + 1
+                    )  # Wait the required time plus 1s
+                    # Retry this message
+                    success = await send_telegram_message(
+                        str(TELEGRAM_SETTINGS["bot_token"] or ""),
+                        str(TELEGRAM_SETTINGS["chat_id"] or ""),
+                        job,
+                        bool(TELEGRAM_SETTINGS["include_date_in_message"]),
+                    )
+                    if success:
+                        add_posted_job_link(posted_jobs_file, job["link"])
+                else:
+                    logger.error(
+                        f"Error sending message for job {job.get('title')}: {e}"
+                    )
     else:
         logger.warning(
             "Telegram bot token or chat ID not configured. Skipping Telegram "

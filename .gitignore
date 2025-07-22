@@ -1,10 +1,22 @@
 # Byte-compiled / optimized / DLL files
-__pycache__/
+__pycache__
 *.py[codz]
 *$py.class
 
 # C extensions
 *.so
+
+# Chrome WebDriver
+chromedriver.exe
+
+# Project specific
+posted_jobs.txt
+THIRD_PARTY_NOTICES.chromedriver
+LICENSE.chromedriver
+
+# Project runtime artefacts
+posted_jobs.txt
+job_scraper.log
 
 # Distribution / packaging
 .Python
