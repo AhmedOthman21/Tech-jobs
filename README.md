@@ -1,8 +1,8 @@
 <p align="center">
-  <img alt="Python" src="https://img.shields.io/badge/python-3.11%2B-blue"/>
+  <img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue"/>
   <img alt="License" src="https://img.shields.io/badge/license-MIT-green"/>
-  <a href="https://github.com/USERNAME/REPO/actions">
-    <img alt="CI" src="https://github.com/USERNAME/REPO/actions/workflows/ci.yml/badge.svg"/>
+  <a href="https://github.com/ahmedothman21/DevOps-jobs/actions">
+    <img alt="CI" src="https://github.com/ahmedothman21/DevOps-jobs/actions/workflows/ci.yml/badge.svg"/>
   </a>
   <img alt="code style: black" src="https://img.shields.io/badge/code%20style-black-000000"/>
 </p>
