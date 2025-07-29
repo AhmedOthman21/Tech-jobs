@@ -14,9 +14,10 @@ posted_jobs.txt
 THIRD_PARTY_NOTICES.chromedriver
 LICENSE.chromedriver
 
-# Project runtime artefacts
+# Project runtime artifacts
 posted_jobs.txt
 job_scraper.log
+*.txt
 
 # Distribution / packaging
 .Python
