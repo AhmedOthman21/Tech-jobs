@@ -28,11 +28,6 @@ src/
 ├── utils/           # Utility functions and helpers
 └── data_extractors/ # Data extraction and processing
 
-docs/               # Documentation
-├── api/            # API documentation
-├── examples/       # Usage examples
-└── guides/         # Setup and development guides
-
 docker/            # Docker-related files
 ├── Dockerfile
 └── Dockerfile.multi-stage
@@ -42,7 +37,7 @@ docker/            # Docker-related files
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/AhmedOthman21/DevOps-jobs
 cd job-scraper
 ```
 
@@ -97,22 +92,23 @@ pre-commit install
 
 Run tests using pytest:
 ```bash
-pytest
+pytest .
 ```
 
 ## Docker Support
 
-Build and run using Docker:
+The Docker image for this project is available on Docker Hub:
+
+[3ito/devops-job-scraper](https://hub.docker.com/repository/docker/3ito/devops-job-scraper/)
+
+You can pull and run the image directly:
 
 ```bash
-# Single-stage build
-docker build -t job-scraper .
-
-# Multi-stage build (recommended for production)
-docker build -f docker/Dockerfile.multi-stage -t job-scraper .
+# Pull the Docker image
+docker pull 3ito/devops-job-scraper:latest
 
 # Run the container
-docker run -d job-scraper
+docker run -d 3ito/devops-job-scraper
 ```
 
 ## Contributing
