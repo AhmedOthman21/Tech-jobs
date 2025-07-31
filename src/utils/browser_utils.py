@@ -172,7 +172,9 @@ def get_selenium_driver(headers: dict | None = None):
         },
     )
     try:
-        driver = uc.Chrome(driver_executable_path="/usr/bin/chromedriver", options=options)
+        driver = uc.Chrome(
+            driver_executable_path="/usr/bin/chromedriver", options=options
+        )
         driver.execute_script(
             "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
         )
