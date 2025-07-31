@@ -9,6 +9,7 @@ WORKDIR /app
 # Alpine uses apk package manager and has different package names
 RUN apk add --no-cache \
     chromium \
+    chromium-chromedriver \
     nss \
     freetype \
     freetype-dev \
@@ -43,6 +44,8 @@ USER appuser
 ENV CHROME_BIN=/usr/bin/chromium-browser
 ENV CHROME_PATH=/usr/lib/chromium/
 ENV POSTED_JOBS_FILE="posted_jobs.txt"
+ENV PATH="/usr/lib/chromium/:$PATH"
+ENV CHROMEDRIVER_PATH="/usr/bin/chromedriver"
 
 # CMD instruction is omitted here. The execution command will be explicitly defined
 # in the GitHub Actions workflow using `docker run` to provide maximum flexibility

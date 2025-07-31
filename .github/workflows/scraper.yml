@@ -9,9 +9,9 @@ on:
       - main
       - docker
   # Schedule recurring runs for automated job scraping.
-  # '0 2 * * *' means 02:00 AM UTC daily. Adjust cron expression as needed.
+  # '0 2 * * *' means 08:00 AM UTC daily. Adjust cron expression as needed.
   schedule:
-    - cron: '0 2 * * *'
+    - cron: '0 8 * * *'
   # Allow manual triggering from the GitHub Actions UI.
   # Includes an input for enabling debug logging, useful for troubleshooting specific runs.
   workflow_dispatch:
