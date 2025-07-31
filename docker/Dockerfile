@@ -1,12 +1,12 @@
-# Use Alpine Linux for a much smaller base image
 FROM python:3.10-alpine
 
-# Set the working directory for the application inside the container.
-# All subsequent commands will operate relative to this directory.
-WORKDIR /app
+# Prevent Python from writing .pyc files to disc
+ENV PYTHONDONTWRITEBYTECODE=1
 
-# Install essential system dependencies for Chromium on Alpine
-# Alpine uses apk package manager and has different package names
+# Ensure Python's output is unbuffered
+ENV PYTHONUNBUFFERED=1
+
+# Install Chromium and ChromeDriver dependencies
 RUN apk add --no-cache \
     chromium \
     chromium-chromedriver \
@@ -15,39 +15,24 @@ RUN apk add --no-cache \
     freetype-dev \
     harfbuzz \
     ca-certificates \
-    ttf-freefont
+    ttf-freefont \
+    libjpeg-turbo \
+    libpng
 
-# Copy the Python dependency file first.
-# This leverages Docker's layer caching: if requirements.txt doesn't change,
-# pip install step won't rerun, speeding up subsequent builds.
-COPY requirements.txt .
-
-# Install build dependencies, Python dependencies, and then remove build dependencies
-RUN apk add --no-cache --virtual .build-deps gcc musl-dev libffi-dev && \
-    pip install --no-cache-dir -r requirements.txt && \
-    apk del .build-deps
-
-# Copy the entire application code into the container.
-# This should be done after dependencies to maximize caching efficiency.
-COPY . .
-
-# Add a non-root user and group
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
-# Create the /app directory and set ownership to appuser and appgroup
-RUN mkdir -p /app && chown -R appuser:appgroup /app
-
-# Switch to the appuser user
-USER appuser
-
-# Set environment variables for Chromium to work properly in Alpine
+# Set environment variables for Chromium and ChromeDriver
 ENV CHROME_BIN=/usr/bin/chromium-browser
 ENV CHROME_PATH=/usr/lib/chromium/
-ENV POSTED_JOBS_FILE="posted_jobs.txt"
-ENV PATH="/usr/lib/chromium/:$PATH"
-ENV CHROMEDRIVER_PATH="/usr/bin/chromedriver"
+ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver
 
-# CMD instruction is omitted here. The execution command will be explicitly defined
-# in the GitHub Actions workflow using `docker run` to provide maximum flexibility
-# for passing runtime arguments and mounting volumes.
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the requirements file and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the entire application code into the container
+COPY . .
+
+# Set the command to run the main application script
 CMD ["python", "main.py"]
