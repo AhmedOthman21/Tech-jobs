@@ -1,5 +1,5 @@
 beautifulsoup4==4.12.3
-selenium==4.22.0
+selenium==4.34.2
 python-telegram-bot==21.3
 undetected-chromedriver==3.5.3
 python-dotenv==1.0.1
