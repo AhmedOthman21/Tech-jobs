@@ -27,6 +27,7 @@ COPY . .
 
 # Add a non-root user and group
 RUN addgroup -S nonroot && adduser -S nonroot -G nonroot
+RUN chown -R nonroot:nonroot /app
 USER nonroot
 
 # Set environment variables for Chromium to work properly in Alpine
