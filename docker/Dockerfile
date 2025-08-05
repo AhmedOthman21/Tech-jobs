@@ -1,38 +1,40 @@
 FROM python:3.10-alpine
 
-# Prevent Python from writing .pyc files to disc
-ENV PYTHONDONTWRITEBYTECODE=1
+# Set the working directory for the application inside the container.
+# All subsequent commands will operate relative to this directory.
+WORKDIR /app
 
-# Ensure Python's output is unbuffered
-ENV PYTHONUNBUFFERED=1
-
-# Install Chromium and ChromeDriver dependencies
+# Install essential system dependencies for Chromium on Alpine
 RUN apk add --no-cache \
     chromium \
-    chromium-chromedriver \
     nss \
     freetype \
     freetype-dev \
     harfbuzz \
     ca-certificates \
-    ttf-freefont \
-    libjpeg-turbo \
-    libpng
+    ttf-freefont
 
-# Set environment variables for Chromium and ChromeDriver
-ENV CHROME_BIN=/usr/bin/chromium-browser
-ENV CHROME_PATH=/usr/lib/chromium/
-ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver
-
-# Set the working directory in the container
-WORKDIR /app
-
-# Copy the requirements file and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the entire application code into the container
+# Install build dependencies, Python dependencies, and then remove build dependencies
+RUN apk add --no-cache --virtual .build-deps gcc musl-dev libffi-dev && \
+    pip install --no-cache-dir -r requirements.txt && \
+    apk del .build-deps
+
+# Copy the entire application code into the container.
+# This should be done after dependencies to maximize caching efficiency.
 COPY . .
 
-# Set the command to run the main application script
+# Add a non-root user and group
+RUN addgroup -S nonroot && adduser -S nonroot -G nonroot
+USER nonroot
+
+# Set environment variables for Chromium to work properly in Alpine
+ENV CHROME_BIN=/usr/bin/chromium-browser
+ENV CHROME_PATH=/usr/lib/chromium/
+ENV POSTED_JOBS_FILE="posted_jobs.txt"
+
+# CMD instruction is omitted here. The execution command will be explicitly defined
+# in the GitHub Actions workflow using `docker run` to provide maximum flexibility
+# for passing runtime arguments and mounting volumes.
 CMD ["python", "main.py"]
