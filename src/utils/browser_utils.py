@@ -173,15 +173,16 @@ def get_selenium_driver(headers: dict | None = None):
         },
     )
     try:
-        # Prefer explicit chromedriver path if provided by environment
-        # Fallback to default behavior of undetected_chromedriver which manages the binary
         chromedriver_path = os.environ.get("CHROMEDRIVER_PATH")
+        # Minimal, explicit override for Windows/local: allow setting UC_CHROME_VERSION_MAIN
+        version_main_env = os.environ.get("UC_CHROME_VERSION_MAIN")
+        uc_kwargs: dict = {"options": options}
         if chromedriver_path and os.path.exists(chromedriver_path):
-            driver = uc.Chrome(
-                driver_executable_path=chromedriver_path, options=options
-            )
-        else:
-            driver = uc.Chrome(options=options)
+            uc_kwargs["driver_executable_path"] = chromedriver_path
+        if version_main_env and version_main_env.isdigit():
+            uc_kwargs["version_main"] = int(version_main_env)
+
+        driver = uc.Chrome(**uc_kwargs)
         driver.execute_script(
             "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
         )
