@@ -1,8 +1,8 @@
 import logging
+import os
 import random
 import time
 
-import os
 import undetected_chromedriver as uc
 from selenium.common.exceptions import NoSuchElementException, WebDriverException
 from selenium.webdriver.common.action_chains import ActionChains
