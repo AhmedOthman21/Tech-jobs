@@ -177,7 +177,9 @@ def get_selenium_driver(headers: dict | None = None):
         # Fallback to default behavior of undetected_chromedriver which manages the binary
         chromedriver_path = os.environ.get("CHROMEDRIVER_PATH")
         if chromedriver_path and os.path.exists(chromedriver_path):
-            driver = uc.Chrome(driver_executable_path=chromedriver_path, options=options)
+            driver = uc.Chrome(
+                driver_executable_path=chromedriver_path, options=options
+            )
         else:
             driver = uc.Chrome(options=options)
         driver.execute_script(
