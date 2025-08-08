@@ -16,7 +16,6 @@ from src.data_extractors.data_extractors import _extract_job_details_from_card
 from src.scrapers.pagination import _scrape_wuzzuf_with_pagination
 from src.utils.browser_utils import (
     detect_blocking,
-    get_selenium_driver,
     human_like_mouse_movement,
     human_like_scroll,
     random_delay,
