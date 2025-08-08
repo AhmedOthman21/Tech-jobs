@@ -37,6 +37,11 @@ jobs:
         # Uses a standard action to clone the repository, making code available to subsequent steps.
         uses: actions/checkout@v4
 
+      - name: GitGuardian scan for secrets
+        uses: GitGuardian/ggshield-action@v1
+        env:
+          GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}
+
       # --- NEW STEPS FOR CODE QUALITY CHECKS ---
       - name: Set up Python for formatting/linting checks
         uses: actions/setup-python@v5
