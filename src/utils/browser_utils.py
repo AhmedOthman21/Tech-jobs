@@ -2,6 +2,7 @@ import logging
 import random
 import time
 
+import os
 import undetected_chromedriver as uc
 from selenium.common.exceptions import NoSuchElementException, WebDriverException
 from selenium.webdriver.common.action_chains import ActionChains
@@ -172,9 +173,13 @@ def get_selenium_driver(headers: dict | None = None):
         },
     )
     try:
-        driver = uc.Chrome(
-            driver_executable_path="/usr/bin/chromedriver", options=options
-        )
+        # Prefer explicit chromedriver path if provided by environment
+        # Fallback to default behavior of undetected_chromedriver which manages the binary
+        chromedriver_path = os.environ.get("CHROMEDRIVER_PATH")
+        if chromedriver_path and os.path.exists(chromedriver_path):
+            driver = uc.Chrome(driver_executable_path=chromedriver_path, options=options)
+        else:
+            driver = uc.Chrome(options=options)
         driver.execute_script(
             "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
         )

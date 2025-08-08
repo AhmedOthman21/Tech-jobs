@@ -7,6 +7,7 @@ WORKDIR /app
 # Install essential system dependencies for Chromium on Alpine
 RUN apk add --no-cache \
     chromium \
+    chromium-chromedriver \
     nss \
     freetype \
     freetype-dev \
@@ -27,12 +28,19 @@ COPY . .
 
 # Add a non-root user and group
 RUN addgroup -S nonroot && adduser -S nonroot -G nonroot
-RUN chown -R nonroot:nonroot /app
+
+# Prepare a writable chromedriver location for the non-root user
+RUN mkdir -p /opt/chromedriver && \
+    cp /usr/lib/chromium/chromedriver /opt/chromedriver/chromedriver && \
+    chmod +x /opt/chromedriver/chromedriver && \
+    chown -R nonroot:nonroot /opt/chromedriver && \
+    chown -R nonroot:nonroot /app
 USER nonroot
 
 # Set environment variables for Chromium to work properly in Alpine
 ENV CHROME_BIN=/usr/bin/chromium-browser
 ENV CHROME_PATH=/usr/lib/chromium/
+ENV CHROMEDRIVER_PATH=/opt/chromedriver/chromedriver
 ENV POSTED_JOBS_FILE="posted_jobs.txt"
 
 # CMD instruction is omitted here. The execution command will be explicitly defined

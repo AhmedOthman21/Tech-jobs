@@ -19,19 +19,24 @@ FROM python:3.10-alpine
 # Install runtime dependencies for Chromium
 RUN apk add --no-cache \
     chromium \
+    chromium-chromedriver \
     nss \
     freetype \
     harfbuzz \
     ca-certificates \
     ttf-freefont
 
-# Add a non-root user and switch to it
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-USER appuser
+# Add a non-root user and prepare chromedriver location
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup && \
+    mkdir -p /opt/chromedriver && \
+    cp /usr/lib/chromium/chromedriver /opt/chromedriver/chromedriver && \
+    chmod +x /opt/chromedriver/chromedriver && \
+    chown -R appuser:appgroup /opt/chromedriver
 
 # Set environment variables for Chromium
 ENV CHROME_BIN=/usr/bin/chromium-browser
 ENV CHROME_PATH=/usr/lib/chromium/
+ENV CHROMEDRIVER_PATH=/opt/chromedriver/chromedriver
 ENV POSTED_JOBS_FILE="posted_jobs.txt"
 ENV PATH="$PATH:/root/.local/bin"
 
@@ -43,5 +48,11 @@ WORKDIR /app
 
 # Copy application code
 COPY . .
+
+# Set ownership after copying sources
+RUN chown -R appuser:appgroup /app
+
+# Switch to non-root
+USER appuser
 
 CMD ["python", "main.py"]
