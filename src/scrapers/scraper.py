@@ -44,7 +44,6 @@ from src.scrapers.scraping_logic import (
     _safe_driver_get,
     _scrape_jobs_with_retry_logic,
     _scrape_single_page_with_scroll,
-    enhance_job_dates_from_pages,
 )
 
 # Import all functions from browser_utils
@@ -90,7 +89,6 @@ __all__ = [
     "_perform_scraping_logic",
     "_scrape_jobs_with_retry_logic",
     "_scrape_single_page_with_scroll",
-    "enhance_job_dates_from_pages",
     # Pagination functions
     "_try_css_next_button",
     "_try_xpath_next_button",

@@ -9,10 +9,7 @@ import logging
 
 import undetected_chromedriver as uc
 
-from src.scrapers.scraping_logic import (
-    _scrape_jobs_with_retry_logic,
-    enhance_job_dates_from_pages,
-)
+from src.scrapers.scraping_logic import _scrape_jobs_with_retry_logic
 from src.utils.browser_utils import get_selenium_driver
 
 logger = logging.getLogger(__name__)
@@ -34,11 +31,8 @@ def scrape_jobs_from_website(driver: uc.Chrome, website_config: dict) -> list:
 
     logger.info(f"Finished scraping {len(jobs)} jobs from {site_name}.")
 
-    # Enhance dates for jobs that show 'Recently'
-    if jobs and "wuzzuf.net" in url:
-        logger.info(f"Enhancing dates for {site_name} jobs...")
-        jobs = enhance_job_dates_from_pages(driver, jobs, site_name)
-        logger.info(f"Date enhancement completed for {site_name}")
+    # Date enhancement removed per request; see backup in
+    # src/scrapers/date_enhancement_backup.py if reinstating later.
 
     return jobs
 

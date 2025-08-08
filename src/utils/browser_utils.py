@@ -11,6 +11,7 @@ from selenium.webdriver.remote.webelement import WebElement
 
 logger = logging.getLogger(__name__)
 
+
 # Rotating User-Agents for stealth
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -78,22 +79,14 @@ def detect_blocking(driver: uc.Chrome) -> bool:  # noqa: C901
             # Generic terms removed: "Robot", "Rate limit", "Security check"
         ]
 
-        non_fatal_indicators = [
-            "Rate limit",
-        ]
+        # Non-fatal indicators intentionally disabled to avoid unnecessary backoff/logging
 
         page_source = driver.page_source.lower()
         for indicator in blocking_indicators:
             if indicator.lower() in page_source:
                 logger.warning(f"Blocking detected: {indicator}")
                 return True
-        for indicator in non_fatal_indicators:
-            if indicator.lower() in page_source:
-                logger.warning(
-                    f"Possible transient block keyword: {indicator}. Backing off..."
-                )
-                time.sleep(random.uniform(5, 10))
-                return False
+        # Skipping non-fatal rate limit handling
         captcha_selectors = [
             "iframe[src*='captcha']",
             ".captcha",

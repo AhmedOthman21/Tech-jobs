@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import random
 import time
 from typing import Dict, List, Set
@@ -119,6 +120,9 @@ async def main() -> None:
     all_scraped_jobs: List[Dict] = []
     driver = None
     try:
+        # Minimal Windows fix: pin UC driver to current Chrome major if not provided
+        if os.name == "nt" and not os.environ.get("UC_CHROME_VERSION_MAIN"):
+            os.environ["UC_CHROME_VERSION_MAIN"] = "138"
         driver = get_selenium_driver()
 
         for website_config in WEBSITE_CONFIGS:
