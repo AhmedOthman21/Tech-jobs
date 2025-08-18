@@ -76,7 +76,10 @@ def detect_blocking(driver: uc.Chrome) -> bool:  # noqa: C901
             "Access Denied",
             "Blocked",
             "CAPTCHA",
-            # Generic terms removed: "Robot", "Rate limit", "Security check"
+            "human verification",
+            "are you a robot",
+            "unusual traffic",
+            "verify you are human",
         ]
 
         # Non-fatal indicators intentionally disabled to avoid unnecessary backoff/logging
@@ -126,7 +129,6 @@ def get_selenium_driver(headers: dict | None = None):
     options.add_argument("--proxy-bypass-list=*")
     options.add_argument("--disable-features=IsolateOrigins,site-per-process")
     options.add_argument("--enable-features=NetworkService,NetworkServiceInProcess")
-    options.add_argument("--headless=new")
     options.add_argument("--disable-web-security")
     options.add_argument("--disable-features=VizDisplayCompositor")
     options.add_argument("--disable-background-timer-throttling")
@@ -151,6 +153,7 @@ def get_selenium_driver(headers: dict | None = None):
     options.add_argument("--disable-background-downloads")
     options.add_argument("--disable-background-upload")
     options.add_argument("--disable-background-media-suspend")
+    options.add_argument("--headless=new")
     user_agent = random.choice(USER_AGENTS)
     options.add_argument(f"user-agent={user_agent}")
     # Remove problematic experimental options that may be unsupported in some driver versions

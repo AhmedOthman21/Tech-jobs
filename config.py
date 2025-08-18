@@ -27,24 +27,35 @@ class WebsiteConfig:
     """Configuration for job scraping websites."""
 
     # Wuzzuf configuration (from previous successful scrapes)
-    WUZZUF_URL = os.getenv("WUZZUF_URL", "https://wuzzuf.net/a/devops-jobs-in-egypt")
+    WUZZUF_URL = os.getenv(
+        "WUZZUF_URL",
+        "https://wuzzuf.net/a/this-week-devops-jobs-in-egypt?"
+        "filters%5Bpost_date%5D%5B0%5D=within_1_week",
+    )
     WUZZUF_URL_IT = os.getenv(
         "WUZZUF_URL_IT",
         "https://wuzzuf.net/search/jobs/?a=navbg&filters%5Bpost_date%5D%5B0%5D=within_1_week&q=it",
     )
     WUZZUF_JOB_CARD_SELECTOR = os.getenv(
-        "WUZZUF_JOB_CARD_SELECTOR", "div.css-1gatmva.e1v1l3u10"
+        "WUZZUF_JOB_CARD_SELECTOR", "div.css-ghe2tq.e1v1l3u10"
     )
-    WUZZUF_TITLE_SELECTOR = os.getenv("WUZZUF_TITLE_SELECTOR", "h2.css-m604qf a")
-    WUZZUF_LINK_SELECTOR = os.getenv("WUZZUF_LINK_SELECTOR", "h2.css-m604qf a")
+    WUZZUF_TITLE_SELECTOR = os.getenv(
+        "WUZZUF_TITLE_SELECTOR", "h2.css-193uk2c a.css-o171kl"
+    )
+    WUZZUF_LINK_SELECTOR = os.getenv(
+        "WUZZUF_LINK_SELECTOR", "h2.css-193uk2c a.css-o171kl"
+    )
     WUZZUF_DESCRIPTION_SELECTOR = os.getenv(
-        "WUZZUF_DESCRIPTION_SELECTOR", "div.css-y4udm8"
+        "WUZZUF_DESCRIPTION_SELECTOR", "div.css-1rhj4yg"
     )
     WUZZUF_TAGS_SELECTOR = os.getenv(
         "WUZZUF_TAGS_SELECTOR",
-        ("div.css-y4udm8 a[class^='css-'], " "div.css-y4udm8 span.eoyjyou0"),
+        ("div.css-1rhj4yg a[class^='css-'], " "div.css-1rhj4yg span[class^='css-']"),
     )
-    WUZZUF_DATE_SELECTOR = os.getenv("WUZZUF_DATE_SELECTOR", "span.css-4c4ojb")
+    WUZZUF_DATE_SELECTOR = os.getenv(
+        "WUZZUF_DATE_SELECTOR",
+        "div.css-1k5ee52 div.css-eg55jf, div.css-1k5ee52 div.css-1jldrig",
+    )
 
     """ # NaukriGulf configuration
     NAUKRIGULF_URL = os.getenv(

@@ -23,6 +23,7 @@ MAX_PAGES_PER_SITE = 25  # default safety limit
 def _try_css_next_button(driver: uc.Chrome) -> bool:
     """Try to find and click next button using CSS selectors."""
     next_page_selectors = [
+        "button.css-wq4g8g a.css-1fcv3il",  # New Wuzzuf specific next button selector
         "button.css-zye1os a.css-1fcv3il",  # Exact Wuzzuf next button structure
         "button.css-zye1os a",  # Button with link inside
         "a.css-1fcv3il",  # Direct link with Wuzzuf class
@@ -36,6 +37,8 @@ def _try_css_next_button(driver: uc.Chrome) -> bool:
         "a[data-testid='next']",
         "a[aria-label='التالي']",  # Arabic next
         "button[aria-label='التالي']",  # Arabic next button
+        "a.css-1evf01f",  # New Wuzzuf next button selector
+        "button.css-1evf01f a",  # New Wuzzuf next button selector 2
     ]
 
     for selector in next_page_selectors:
@@ -45,7 +48,7 @@ def _try_css_next_button(driver: uc.Chrome) -> bool:
                 class_attr = next_button.get_attribute("class")
                 if class_attr and "disabled" not in class_attr.lower():
                     next_button.click()
-                    time.sleep(3)  # Wait for page to load
+                    random_delay(3, 5)  # Increased wait for page to load after click
                     return True
         except NoSuchElementException:
             continue
@@ -96,8 +99,8 @@ def _process_single_wuzzuf_page(
 
     # Wait for job cards to load
     try:
-        WebDriverWait(driver, 20).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, job_card_selector))
+        WebDriverWait(driver, 30).until(
+            EC.visibility_of_all_elements_located((By.CSS_SELECTOR, job_card_selector))
         )
     except TimeoutException:
         logger.warning(f"Timeout waiting for job cards on page {page}")

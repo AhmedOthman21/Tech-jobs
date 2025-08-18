@@ -127,8 +127,8 @@ def _perform_initial_scraping_setup(driver: uc.Chrome, website_config: dict) -> 
         driver = restart_driver_on_block(driver)
         return False
 
-    WebDriverWait(driver, 40).until(
-        EC.presence_of_all_elements_located((By.CSS_SELECTOR, job_card_selector))
+    WebDriverWait(driver, 30).until(
+        EC.visibility_of_all_elements_located((By.CSS_SELECTOR, job_card_selector))
     )
     logger.debug(f"Successfully loaded and found job cards on {site_name}.")
     return True
