@@ -51,10 +51,15 @@ jobs:
             const script = require('./.github/scripts/download-previous-artifact.js');
             await script({ github, context, core });
 
-      - name: Set Read/Write Permissions for Posted Jobs File (Host)
-        run: sudo chmod a+rw posted_jobs.txt || true
-        # The '|| true' ensures this step doesn't fail if the file doesn't exist initially.
-        # This ensures the file has necessary permissions before Docker mounts it.
+      - name: Create or Update Posted Jobs File on Host
+        # Ensure the posted_jobs.txt exists on the host for Docker cp to use.
+        # It will be overwritten if the artifact was downloaded.
+        run: touch posted_jobs.txt
+
+      - name: Copy Posted Jobs File into Container
+        # Copy the host's posted_jobs.txt into the container, ensuring it's writable by the app.
+        # The container name 'devops-job-scraper-run' must match the one used in docker run.
+        run: docker cp posted_jobs.txt devops-job-scraper-run:/app/posted_jobs.txt
 
       - name: GitGuardian scan for secrets
         uses: GitGuardian/ggshield-action@v1
@@ -156,8 +161,11 @@ jobs:
             -e TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}" \
             -e POSTED_JOBS_FILE="${CONTAINER_POSTED_JOBS_PATH}" \
             -e DEBUG_ENABLED="${{ env.DEBUG_ENABLED }}" \
-            -v "${{ github.workspace }}/posted_jobs.txt:/app/posted_jobs.txt" \
             ${{ secrets.DOCKERHUB_USERNAME }}/devops-job-scraper:latest # Uses the 'latest' image, which was just built/pushed.
+
+      - name: Copy Posted Jobs File out of Container
+        # Copy the updated posted_jobs.txt from the container back to the host for artifact upload.
+        run: docker cp devops-job-scraper-run:/app/posted_jobs.txt posted_jobs.txt
 
       - name: Upload Posted Jobs File as Artifact
         # Uploads the updated 'posted_jobs.txt' file as a workflow artifact.
