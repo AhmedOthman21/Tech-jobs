@@ -140,6 +140,9 @@ jobs:
           # Define the host path where the 'posted_jobs.txt' is cached.
           HOST_POSTED_JOBS_PATH="${{ github.workspace }}/posted_jobs.txt"
 
+          # Ensure the mounted file has write permissions for the container user
+          chmod +w "${HOST_POSTED_JOBS_PATH}" || true # Use || true to prevent failure if file doesn't exist yet
+
           # Execute the Docker container.
           # --rm: Automatically removes the container after it exits.
           # --name: Assigns a name for easy identification in Docker logs/management.
