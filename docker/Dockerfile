@@ -43,18 +43,7 @@ ENV CHROME_PATH=/usr/lib/chromium/
 ENV CHROMEDRIVER_PATH=/opt/chromedriver/chromedriver
 ENV POSTED_JOBS_FILE="posted_jobs.txt"
 
-# Combined entrypoint logic and main command
-CMD HOST_WORKSPACE_PATH="/gh_workspace"; \
-    HOST_POSTED_JOBS_FILE="${HOST_WORKSPACE_PATH}/posted_jobs.txt"; \
-    if [ -f "$HOST_POSTED_JOBS_FILE" ]; then \
-        echo "Copying existing posted jobs from mounted workspace to /app/posted_jobs.txt"; \
-        cp "$HOST_POSTED_JOBS_FILE" "$POSTED_JOBS_FILE"; \
-    else \
-        echo "Host posted_jobs.txt not found in mounted workspace, /app/posted_jobs.txt will be created by the application if needed."; \
-        touch "$POSTED_JOBS_FILE"; \
-    fi; \
-    if [ ! -w "$POSTED_JOBS_FILE" ]; then \
-        echo "Error: /app/posted_jobs.txt is not writable by the container user!"; \
-        exit 1; \
-    fi; \
-    exec python main.py
+# CMD instruction is omitted here. The execution command will be explicitly defined
+# in the GitHub Actions workflow using `docker run` to provide maximum flexibility
+# for passing runtime arguments and mounting volumes.
+CMD ["python", "main.py"]

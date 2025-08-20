@@ -51,6 +51,11 @@ jobs:
             const script = require('./.github/scripts/download-previous-artifact.js');
             await script({ github, context, core });
 
+      - name: Set Read/Write Permissions for Posted Jobs File (Host)
+        run: sudo chmod a+rw posted_jobs.txt || true
+        # The '|| true' ensures this step doesn't fail if the file doesn't exist initially.
+        # This ensures the file has necessary permissions before Docker mounts it.
+
       - name: GitGuardian scan for secrets
         uses: GitGuardian/ggshield-action@v1
         env:
@@ -151,7 +156,7 @@ jobs:
             -e TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}" \
             -e POSTED_JOBS_FILE="${CONTAINER_POSTED_JOBS_PATH}" \
             -e DEBUG_ENABLED="${{ env.DEBUG_ENABLED }}" \
-            -v "${{ github.workspace }}:/gh_workspace" \
+            -v "${{ github.workspace }}/posted_jobs.txt:/app/posted_jobs.txt" \
             ${{ secrets.DOCKERHUB_USERNAME }}/devops-job-scraper:latest # Uses the 'latest' image, which was just built/pushed.
 
       - name: Upload Posted Jobs File as Artifact
