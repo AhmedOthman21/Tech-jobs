@@ -173,8 +173,8 @@ jobs:
 
           # Fix file permissions inside the container
           echo "Fixing file permissions inside container..."
-          docker exec "${CONTAINER_NAME}" chown nonroot:nonroot "${CONTAINER_POSTED_JOBS_PATH}"
-          docker exec "${CONTAINER_NAME}" chmod 644 "${CONTAINER_POSTED_JOBS_PATH}"
+          docker exec --user root "${CONTAINER_NAME}" chown nonroot:nonroot "${CONTAINER_POSTED_JOBS_PATH}"
+          docker exec --user root "${CONTAINER_NAME}" chmod 644 "${CONTAINER_POSTED_JOBS_PATH}"
 
           # Debug: Show file permissions and ownership after fixing
           echo "File permissions and ownership after fixing:"
