@@ -92,6 +92,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-posted-jobs # Ensures cache restoration even if the exact key doesn't match.
 
+      - name: Download Posted Jobs File Artifact
+        # Downloads the 'posted_jobs.txt' artifact from a previous workflow run.
+        # This ensures that the history of posted jobs is maintained across scheduled runs.
+        uses: actions/download-artifact@v4
+        with:
+          name: posted-jobs-file
+          path: . # Download to the current directory (workflow's workspace)
+
       - name: Set up Docker Buildx
         # Initializes Docker Buildx, enhancing Docker build capabilities (e.g., for multi-platform builds, caching).
         uses: docker/setup-buildx-action@v3
