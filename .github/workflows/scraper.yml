@@ -154,8 +154,8 @@ jobs:
             -e POSTED_JOBS_FILE="${CONTAINER_POSTED_JOBS_PATH}" \
             -e DEBUG_ENABLED="${{ env.DEBUG_ENABLED }}" \
             -v "${HOST_POSTED_JOBS_PATH}:${CONTAINER_POSTED_JOBS_PATH}" \
-            /bin/sh -c "chmod +w ${CONTAINER_POSTED_JOBS_PATH} && python main.py" \
-            ${{ secrets.DOCKERHUB_USERNAME }}/devops-job-scraper:latest # Uses the 'latest' image, which was just built/pushed.
+            ${{ secrets.DOCKERHUB_USERNAME }}/devops-job-scraper:latest \
+            /bin/sh -c "chmod +w ${CONTAINER_POSTED_JOBS_PATH} && python main.py" # Uses the 'latest' image, which was just built/pushed.
 
       - name: Upload Posted Jobs File as Artifact
         # Uploads the updated 'posted_jobs.txt' file as a workflow artifact.
