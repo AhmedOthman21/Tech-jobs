@@ -96,7 +96,7 @@ def _truncate_message(
     static_parts_base = (
         f"✨ <b><u>New Job Posting - {job_post.get('source', 'Unknown')}</u></b> "
         f"✨\n<b>Title:</b> {clean_title}\n<b>Link:</b> "
-        f"<a href='{job_post.get('link', '#')}'>View Job</a>"
+        f"<a href='{job_post.get('link', '#')}'>View Job Now!</a>"
     )
 
     static_parts_len = len(static_parts_base)
@@ -131,7 +131,7 @@ def _truncate_message(
     message_parts = [
         f"✨ <b><u>New Job Posting - {job_post.get('source', 'Unknown')}</u></b> ✨",
         f"<b>Title:</b> {clean_title}",
-        f"<b>Link:</b> <a href='{job_post.get('link', '#')}'>View Job</a>",
+        f"<b>Link:</b> <a href='{job_post.get('link', '#')}'>View Job Now!</a>",
     ]
 
     # Add date only if requested
@@ -174,6 +174,15 @@ async def send_telegram_message(
             text=final_message,
             parse_mode=telegram.constants.ParseMode.HTML,
             disable_web_page_preview=True,
+            reply_markup=telegram.InlineKeyboardMarkup(
+                [
+                    [
+                        telegram.InlineKeyboardButton(
+                            text="View Job Now!", url=job_post.get("link", "#")
+                        )
+                    ]
+                ]
+            ),
         )
         logger.info(
             f"Telegram message sent for: {job_post['title']} "

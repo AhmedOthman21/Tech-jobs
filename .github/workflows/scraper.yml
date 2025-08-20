@@ -27,6 +27,8 @@ jobs:
   scrape_and_notify:
     # Specify the runner environment. ubuntu-latest is a standard choice for Linux-based containers.
     runs-on: ubuntu-latest
+    permissions:
+      actions: read # Needed to download artifacts from previous runs
     # Define environment variables available to all steps in this job.
     env:
       # Map the workflow_dispatch input to an environment variable consumed by the Python script.
@@ -36,6 +38,18 @@ jobs:
       - name: Checkout repository code
         # Uses a standard action to clone the repository, making code available to subsequent steps.
         uses: actions/checkout@v4
+
+      - name: Download Previous Posted Jobs Artifact
+        uses: actions/github-script@v6
+        env:
+          WORKFLOW_FILENAME: scraper.yml
+          ARTIFACT_NAME: posted-jobs-file
+          ARTIFACT_FILENAME: posted_jobs.zip
+          UNZIP_DIR: .
+        with:
+          script: |
+            const script = require('./.github/scripts/download-previous-artifact.js');
+            await script({ github, context, core });
 
       - name: GitGuardian scan for secrets
         uses: GitGuardian/ggshield-action@v1
