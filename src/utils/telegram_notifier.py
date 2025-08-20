@@ -51,6 +51,21 @@ def add_posted_job_link(file_path: str, link: str):
         logger.error(f"An unexpected error occurred while adding posted job link: {e}")
 
 
+def save_posted_job_links(file_path: str, links: set):
+    """
+    Saves all currently known job links to the posted jobs file, overwriting its content.
+    """
+    try:
+        with open(file_path, "w", encoding="utf-8") as f:
+            for link in sorted(list(links)):  # Sort for consistent file content
+                f.write(link + "\n")
+        logger.debug(f"Saved {len(links)} job links to posted jobs file: {file_path}")
+    except IOError as e:
+        logger.error(f"Error writing to posted jobs file {file_path}: {e}")
+    except Exception as e:
+        logger.error(f"An unexpected error occurred while saving posted job links: {e}")
+
+
 def _format_telegram_message(job_post: dict, include_date: bool = False) -> str:
     """Constructs the core message parts for a job posting."""
     clean_title = html.escape(job_post.get("title", "No Title"))

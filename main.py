@@ -17,6 +17,7 @@ from src.utils.browser_utils import get_selenium_driver
 from src.utils.telegram_notifier import (
     add_posted_job_link,
     load_posted_job_links,
+    save_posted_job_links,
     send_telegram_message,
 )
 
@@ -146,6 +147,9 @@ async def main() -> None:
         logger.info(f"Found {len(new_jobs_found)} new relevant jobs.")
 
         await notify_new_jobs(new_jobs_found, posted_jobs_file_path)
+        save_posted_job_links(
+            posted_jobs_file_path, already_posted_links
+        )  # Save the full set of links
 
     except Exception as e:
         logger.critical(f"An unhandled error occurred in main: {e}", exc_info=True)
