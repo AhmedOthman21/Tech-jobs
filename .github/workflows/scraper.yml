@@ -51,13 +51,6 @@ jobs:
             const script = require('./.github/scripts/download-previous-artifact.js');
             await script({ github, context, core });
 
-      - name: Set Ownership for Posted Jobs File (Host)
-        # Explicitly change ownership on the host to match the container's nonroot user (UID 1000)
-        run: sudo chown 1000:1000 posted_jobs.txt || true
-        # The '|| true' ensures this step doesn't fail if the file doesn't exist initially,
-        # which can happen on the very first run if no artifact is downloaded.
-        # The Python app will create it later, and its permissions will be handled.
-
       - name: GitGuardian scan for secrets
         uses: GitGuardian/ggshield-action@v1
         env:

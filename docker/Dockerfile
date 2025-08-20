@@ -26,6 +26,10 @@ RUN apk add --no-cache --virtual .build-deps gcc musl-dev libffi-dev && \
 # This should be done after dependencies to maximize caching efficiency.
 COPY . .
 
+# Copy and set permissions for the entrypoint script
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # Add a non-root user and group
 RUN addgroup -S nonroot && adduser -S nonroot -G nonroot
 
@@ -43,7 +47,6 @@ ENV CHROME_PATH=/usr/lib/chromium/
 ENV CHROMEDRIVER_PATH=/opt/chromedriver/chromedriver
 ENV POSTED_JOBS_FILE="posted_jobs.txt"
 
-# CMD instruction is omitted here. The execution command will be explicitly defined
-# in the GitHub Actions workflow using `docker run` to provide maximum flexibility
-# for passing runtime arguments and mounting volumes.
-CMD ["python", "main.py"]
+# Use the entrypoint script as the default command
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["python", "main.py"] # This CMD will be passed as arguments to the ENTRYPOINT
