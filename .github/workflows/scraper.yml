@@ -138,22 +138,20 @@ jobs:
           # Define internal container path for the posted jobs file.
           CONTAINER_POSTED_JOBS_PATH="/app/posted_jobs.txt"
           # Define the host path where the 'posted_jobs.txt' is cached.
-          HOST_POSTED_JOBS_PATH="${{ github.workspace }}/posted_jobs.txt"
-
+          
           # Execute the Docker container.
           # --rm: Automatically removes the container after it exits.
           # --name: Assigns a name for easy identification in Docker logs/management.
           # -e: Passes environment variables, including sensitive tokens from GitHub Secrets
           #     and the debug flag.
-          # -v: Mounts the 'posted_jobs.txt' file from the host (cached from previous runs)
-          #     into the container, ensuring persistent state.
+          # -v: Mounts the entire GitHub workspace, allowing internal copy of files with correct permissions.
           docker run --rm \
             --name devops-job-scraper-run \
             -e TELEGRAM_BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}" \
             -e TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}" \
             -e POSTED_JOBS_FILE="${CONTAINER_POSTED_JOBS_PATH}" \
             -e DEBUG_ENABLED="${{ env.DEBUG_ENABLED }}" \
-            -v "${HOST_POSTED_JOBS_PATH}:/tmp/posted_jobs.txt.host:ro" \
+            -v "${{ github.workspace }}:/gh_workspace" \
             ${{ secrets.DOCKERHUB_USERNAME }}/devops-job-scraper:latest # Uses the 'latest' image, which was just built/pushed.
 
       - name: Upload Posted Jobs File as Artifact

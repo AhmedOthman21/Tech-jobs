@@ -44,15 +44,16 @@ ENV CHROMEDRIVER_PATH=/opt/chromedriver/chromedriver
 ENV POSTED_JOBS_FILE="posted_jobs.txt"
 
 # Combined entrypoint logic and main command
-CMD HOST_MOUNT_PATH="/tmp/posted_jobs.txt.host"; \
-    if [ -f "$HOST_MOUNT_PATH" ]; then \
-        echo "Copying existing posted jobs from host to /app/posted_jobs.txt"; \
-        cat "$HOST_MOUNT_PATH" > /app/posted_jobs.txt; \
+CMD HOST_WORKSPACE_PATH="/gh_workspace"; \
+    HOST_POSTED_JOBS_FILE="${HOST_WORKSPACE_PATH}/posted_jobs.txt"; \
+    if [ -f "$HOST_POSTED_JOBS_FILE" ]; then \
+        echo "Copying existing posted jobs from mounted workspace to /app/posted_jobs.txt"; \
+        cp "$HOST_POSTED_JOBS_FILE" "$POSTED_JOBS_FILE"; \
     else \
-        echo "Host posted_jobs.txt not found, /app/posted_jobs.txt will be created by the application if needed."; \
-        touch /app/posted_jobs.txt; \
+        echo "Host posted_jobs.txt not found in mounted workspace, /app/posted_jobs.txt will be created by the application if needed."; \
+        touch "$POSTED_JOBS_FILE"; \
     fi; \
-    if [ ! -w "/app/posted_jobs.txt" ]; then \
+    if [ ! -w "$POSTED_JOBS_FILE" ]; then \
         echo "Error: /app/posted_jobs.txt is not writable by the container user!"; \
         exit 1; \
     fi; \
