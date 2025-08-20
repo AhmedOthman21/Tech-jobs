@@ -171,6 +171,20 @@ jobs:
           echo "File size: $(wc -l < "${HOST_POSTED_JOBS_FILE}") lines"
           docker cp "${HOST_POSTED_JOBS_FILE}" "${CONTAINER_NAME}:${CONTAINER_POSTED_JOBS_PATH}"
 
+          # Fix file permissions inside the container
+          echo "Fixing file permissions inside container..."
+          docker exec "${CONTAINER_NAME}" chown nonroot:nonroot "${CONTAINER_POSTED_JOBS_PATH}"
+          docker exec "${CONTAINER_NAME}" chmod 644 "${CONTAINER_POSTED_JOBS_PATH}"
+
+          # Debug: Show file permissions and ownership after fixing
+          echo "File permissions and ownership after fixing:"
+          docker exec "${CONTAINER_NAME}" ls -la "${CONTAINER_POSTED_JOBS_PATH}"
+
+          # Debug: Show file content inside container before running Python
+          echo "File content inside container before running Python:"
+          docker exec "${CONTAINER_NAME}" cat "${CONTAINER_POSTED_JOBS_PATH}"
+          echo "File size inside container: $(docker exec "${CONTAINER_NAME}" wc -l < "${CONTAINER_POSTED_JOBS_PATH}") lines"
+
           # 3. Execute the Python application inside the running container
           echo "Running Python application in container..."
           docker exec "${CONTAINER_NAME}" python main.py
