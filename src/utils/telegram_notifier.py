@@ -56,13 +56,14 @@ def save_posted_job_links(file_path: str, links: set):
     Saves all currently known job links to the posted jobs file, overwriting its content.
     """
     try:
+        logger.info(f"Attempting to save {len(links)} links to posted jobs file: {file_path}")
+        logger.debug(f"Links to save: {sorted(list(links))}")
+        
         with open(file_path, "w", encoding="utf-8") as f:
             for link in sorted(list(links)):  # Sort for consistent file content
                 f.write(link + "\n")
-        logger.debug(
-            f"Attempting to save {len(links)} links to posted jobs file: {file_path}"
-        )  # Added debug log
-        logger.debug(f"Saved {len(links)} job links to posted jobs file: {file_path}")
+        
+        logger.info(f"Successfully saved {len(links)} job links to posted jobs file: {file_path}")
     except IOError as e:
         logger.error(f"Error writing to posted jobs file {file_path}: {e}")
     except Exception as e:

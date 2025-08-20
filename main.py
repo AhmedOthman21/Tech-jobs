@@ -68,7 +68,8 @@ async def notify_new_jobs(new_jobs: List[Dict], posted_jobs_file: str) -> None:
                     bool(TELEGRAM_SETTINGS["include_date_in_message"]),
                 )
                 if success:
-                    add_posted_job_link(posted_jobs_file, job["link"])
+                    # Don't save individual links here - we'll save all at once at the end
+                    pass
 
                 # Adaptive delay: increase if we're sending many messages
                 if i > 0 and i % 10 == 0:
@@ -90,7 +91,8 @@ async def notify_new_jobs(new_jobs: List[Dict], posted_jobs_file: str) -> None:
                         bool(TELEGRAM_SETTINGS["include_date_in_message"]),
                     )
                     if success:
-                        add_posted_job_link(posted_jobs_file, job["link"])
+                        # Don't save individual links here - we'll save all at once at the end
+                        pass
                 else:
                     logger.error(
                         f"Error sending message for job {job.get('title')}: {e}"
@@ -115,6 +117,7 @@ async def main() -> None:
         posted_jobs_file_path = posted_jobs_file[0]
     else:
         posted_jobs_file_path = posted_jobs_file
+    logger.info(f"Using posted jobs file path: {posted_jobs_file_path}")
     already_posted_links = load_posted_job_links(posted_jobs_file_path)
     logger.info(f"Loaded {len(already_posted_links)} previously posted job links.")
 
@@ -145,8 +148,12 @@ async def main() -> None:
 
         new_jobs_found = process_scraped_jobs(all_scraped_jobs, already_posted_links)
         logger.info(f"Found {len(new_jobs_found)} new relevant jobs.")
+        logger.info(f"Total links after processing (old + new): {len(already_posted_links)}")
 
         await notify_new_jobs(new_jobs_found, posted_jobs_file_path)
+        logger.info(f"About to save {len(already_posted_links)} total links to file")
+        logger.info(f"File path for saving: {posted_jobs_file_path}")
+        logger.info(f"Links to save: {sorted(list(already_posted_links))}")
         save_posted_job_links(
             posted_jobs_file_path, already_posted_links
         )  # Save the full set of links

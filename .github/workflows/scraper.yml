@@ -166,6 +166,9 @@ jobs:
 
           # 2. Copy the existing posted_jobs.txt from host to container
           echo "Copying posted_jobs.txt into container..."
+          echo "Content of posted_jobs.txt before copying into container:"
+          cat "${HOST_POSTED_JOBS_FILE}"
+          echo "File size: $(wc -l < "${HOST_POSTED_JOBS_FILE}") lines"
           docker cp "${HOST_POSTED_JOBS_FILE}" "${CONTAINER_NAME}:${CONTAINER_POSTED_JOBS_PATH}"
 
           # 3. Execute the Python application inside the running container
@@ -175,6 +178,11 @@ jobs:
           # 4. Copy the updated posted_jobs.txt from container to host
           echo "Copying updated posted_jobs.txt from container..."
           docker cp "${CONTAINER_NAME}:${CONTAINER_POSTED_JOBS_PATH}" "${HOST_POSTED_JOBS_FILE}"
+
+          # Debug: Show the content of the file after copying
+          echo "Content of posted_jobs.txt after copying from container:"
+          cat "${HOST_POSTED_JOBS_FILE}"
+          echo "File size: $(wc -l < "${HOST_POSTED_JOBS_FILE}") lines"
 
           # 5. Stop and remove the container
           echo "Cleaning up container..."
