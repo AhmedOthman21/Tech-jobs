@@ -56,11 +56,6 @@ jobs:
         # It will be overwritten if the artifact was downloaded.
         run: touch posted_jobs.txt
 
-      - name: Copy Posted Jobs File into Container
-        # Copy the host's posted_jobs.txt into the container, ensuring it's writable by the app.
-        # The container name 'devops-job-scraper-run' must match the one used in docker run.
-        run: docker cp posted_jobs.txt devops-job-scraper-run:/app/posted_jobs.txt
-
       - name: GitGuardian scan for secrets
         uses: GitGuardian/ggshield-action@v1
         env:
@@ -145,27 +140,30 @@ jobs:
         # Executes the newly built (and pushed) Docker image.
         # Environment variables and the persisted 'posted_jobs.txt' are mounted/passed.
         run: |
-          # Define internal container path for the posted jobs file.
+          CONTAINER_NAME="devops-job-scraper-run"
           CONTAINER_POSTED_JOBS_PATH="/app/posted_jobs.txt"
-          # Define the host path where the 'posted_jobs.txt' is cached.
-          
-          # Execute the Docker container.
-          # --rm: Automatically removes the container after it exits.
-          # --name: Assigns a name for easy identification in Docker logs/management.
-          # -e: Passes environment variables, including sensitive tokens from GitHub Secrets
-          #     and the debug flag.
-          # -v: Mounts the entire GitHub workspace, allowing internal copy of files with correct permissions.
-          docker run --rm \
-            --name devops-job-scraper-run \
+          HOST_POSTED_JOBS_FILE="${{ github.workspace }}/posted_jobs.txt"
+
+          # 1. Start the container in detached mode
+          docker run -d --name ${CONTAINER_NAME} \
             -e TELEGRAM_BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}" \
             -e TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}" \
             -e POSTED_JOBS_FILE="${CONTAINER_POSTED_JOBS_PATH}" \
             -e DEBUG_ENABLED="${{ env.DEBUG_ENABLED }}" \
-            ${{ secrets.DOCKERHUB_USERNAME }}/devops-job-scraper:latest # Uses the 'latest' image, which was just built/pushed.
+            ${{ secrets.DOCKERHUB_USERNAME }}/devops-job-scraper:latest
 
-      - name: Copy Posted Jobs File out of Container
-        # Copy the updated posted_jobs.txt from the container back to the host for artifact upload.
-        run: docker cp devops-job-scraper-run:/app/posted_jobs.txt posted_jobs.txt
+          # 2. Copy the existing posted_jobs.txt from host to container
+          docker cp "${HOST_POSTED_JOBS_FILE}" "${CONTAINER_NAME}:${CONTAINER_POSTED_JOBS_PATH}"
+
+          # 3. Execute the Python application inside the running container
+          docker exec "${CONTAINER_NAME}" python main.py
+
+          # 4. Copy the updated posted_jobs.txt from container to host
+          docker cp "${CONTAINER_NAME}:${CONTAINER_POSTED_JOBS_PATH}" "${HOST_POSTED_JOBS_FILE}"
+
+          # 5. Stop and remove the container
+          docker stop "${CONTAINER_NAME}"
+          docker rm "${CONTAINER_NAME}"
 
       - name: Upload Posted Jobs File as Artifact
         # Uploads the updated 'posted_jobs.txt' file as a workflow artifact.
