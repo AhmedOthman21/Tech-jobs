@@ -144,24 +144,40 @@ jobs:
           CONTAINER_POSTED_JOBS_PATH="/app/posted_jobs.txt"
           HOST_POSTED_JOBS_FILE="${{ github.workspace }}/posted_jobs.txt"
 
-          # 1. Start the container in detached mode
+          # Ensure no old container is lingering
+          docker rm -f "${CONTAINER_NAME}" || true
+
+          # 1. Start the container in detached mode with memory limits
           docker run -d --name ${CONTAINER_NAME} \
+            --memory=2g \
+            --memory-swap=2g \
             -e TELEGRAM_BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}" \
             -e TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}" \
             -e POSTED_JOBS_FILE="${CONTAINER_POSTED_JOBS_PATH}" \
             -e DEBUG_ENABLED="${{ env.DEBUG_ENABLED }}" \
             ${{ secrets.DOCKERHUB_USERNAME }}/devops-job-scraper:latest
 
+          # Wait a moment for container to be fully ready
+          sleep 5
+
+          # Check if container is running
+          echo "Container status:"
+          docker ps -a --filter name=${CONTAINER_NAME}
+
           # 2. Copy the existing posted_jobs.txt from host to container
+          echo "Copying posted_jobs.txt into container..."
           docker cp "${HOST_POSTED_JOBS_FILE}" "${CONTAINER_NAME}:${CONTAINER_POSTED_JOBS_PATH}"
 
           # 3. Execute the Python application inside the running container
+          echo "Running Python application in container..."
           docker exec "${CONTAINER_NAME}" python main.py
 
           # 4. Copy the updated posted_jobs.txt from container to host
+          echo "Copying updated posted_jobs.txt from container..."
           docker cp "${CONTAINER_NAME}:${CONTAINER_POSTED_JOBS_PATH}" "${HOST_POSTED_JOBS_FILE}"
 
           # 5. Stop and remove the container
+          echo "Cleaning up container..."
           docker stop "${CONTAINER_NAME}"
           docker rm "${CONTAINER_NAME}"
 
