@@ -26,10 +26,6 @@ RUN apk add --no-cache --virtual .build-deps gcc musl-dev libffi-dev && \
 # This should be done after dependencies to maximize caching efficiency.
 COPY . .
 
-# Copy and set permissions for the entrypoint script
-COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
 # Add a non-root user and group
 RUN addgroup -S nonroot && adduser -S nonroot -G nonroot
 
@@ -47,6 +43,17 @@ ENV CHROME_PATH=/usr/lib/chromium/
 ENV CHROMEDRIVER_PATH=/opt/chromedriver/chromedriver
 ENV POSTED_JOBS_FILE="posted_jobs.txt"
 
-# Use the entrypoint script as the default command
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD ["python", "main.py"] # This CMD will be passed as arguments to the ENTRYPOINT
+# Combined entrypoint logic and main command
+CMD HOST_MOUNT_PATH="/tmp/posted_jobs.txt.host"; \
+    if [ -f "$HOST_MOUNT_PATH" ]; then \
+        echo "Copying existing posted jobs from host to /app/posted_jobs.txt"; \
+        cat "$HOST_MOUNT_PATH" > /app/posted_jobs.txt; \
+    else \
+        echo "Host posted_jobs.txt not found, /app/posted_jobs.txt will be created by the application if needed."; \
+        touch /app/posted_jobs.txt; \
+    fi; \
+    if [ ! -w "/app/posted_jobs.txt" ]; then \
+        echo "Error: /app/posted_jobs.txt is not writable by the container user!"; \
+        exit 1; \
+    fi; \
+    exec python main.py

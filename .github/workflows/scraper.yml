@@ -153,7 +153,7 @@ jobs:
             -e TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}" \
             -e POSTED_JOBS_FILE="${CONTAINER_POSTED_JOBS_PATH}" \
             -e DEBUG_ENABLED="${{ env.DEBUG_ENABLED }}" \
-            -v "${HOST_POSTED_JOBS_PATH}:${CONTAINER_POSTED_JOBS_PATH}" \
+            -v "${HOST_POSTED_JOBS_PATH}:/tmp/posted_jobs.txt.host:ro" \
             ${{ secrets.DOCKERHUB_USERNAME }}/devops-job-scraper:latest # Uses the 'latest' image, which was just built/pushed.
 
       - name: Upload Posted Jobs File as Artifact
