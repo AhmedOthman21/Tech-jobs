@@ -15,7 +15,6 @@ from config import (
 from src.scrapers.scraper import scrape_jobs_from_website
 from src.utils.browser_utils import get_selenium_driver
 from src.utils.telegram_notifier import (
-    add_posted_job_link,
     load_posted_job_links,
     save_posted_job_links,
     send_telegram_message,
@@ -148,7 +147,9 @@ async def main() -> None:
 
         new_jobs_found = process_scraped_jobs(all_scraped_jobs, already_posted_links)
         logger.info(f"Found {len(new_jobs_found)} new relevant jobs.")
-        logger.info(f"Total links after processing (old + new): {len(already_posted_links)}")
+        logger.info(
+            f"Total links after processing (old + new): {len(already_posted_links)}"
+        )
 
         await notify_new_jobs(new_jobs_found, posted_jobs_file_path)
         logger.info(f"About to save {len(already_posted_links)} total links to file")
