@@ -48,67 +48,8 @@ jobs:
           UNZIP_DIR: .
         with:
           script: |
-            const fs = require('fs');
-            const { execSync } = require('child_process');
-
-            const { owner, repo } = context.repo;
-            const workflowFilename = process.env.WORKFLOW_FILENAME || 'scraper.yml';
-            const artifactName = process.env.ARTIFACT_NAME || 'posted-jobs-file';
-            const artifactFilename = process.env.ARTIFACT_FILENAME || 'posted_jobs.zip';
-            const unzipDir = process.env.UNZIP_DIR || '.';
-
-            core.info(`Looking up workflow by filename: ${workflowFilename}`);
-            const { data: workflow } = await github.rest.actions.getWorkflow({
-              owner,
-              repo,
-              workflow_id: workflowFilename,
-            });
-
-            const currentRunId = context.runId;
-            const currentBranch = context.ref.replace('refs/heads/', '');
-            core.info(`Current run id: ${currentRunId}, branch: ${currentBranch}`);
-
-            const { data: runs } = await github.rest.actions.listWorkflowRuns({
-              owner,
-              repo,
-              workflow_id: workflow.id,
-              per_page: 50,
-              branch: currentBranch,
-            });
-
-            const previousSuccessfulRun = runs.workflow_runs.find((r) => r.id !== currentRunId && r.conclusion === 'success');
-            if (!previousSuccessfulRun) {
-              core.warning('No previous successful workflow run found on this branch; skipping artifact download.');
-              return;
-            }
-            core.info(`Previous successful run id: ${previousSuccessfulRun.id}`);
-
-            const { data: artifacts } = await github.rest.actions.listWorkflowRunArtifacts({
-              owner,
-              repo,
-              run_id: previousSuccessfulRun.id,
-            });
-
-            const target = artifacts.artifacts.find((a) => a.name === artifactName && !a.expired);
-            if (!target) {
-              core.warning(`Artifact '${artifactName}' not found for run ${previousSuccessfulRun.id} or it is expired.`);
-              return;
-            }
-            core.info(`Found artifact '${artifactName}' (id: ${target.id}). Downloading...`);
-
-            const { data: archive } = await github.rest.actions.downloadArtifact({
-              owner,
-              repo,
-              artifact_id: target.id,
-              archive_format: 'zip',
-            });
-
-            fs.writeFileSync(artifactFilename, Buffer.from(archive));
-            core.info(`Saved artifact to ${artifactFilename}. Extracting...`);
-
-            // Ensure unzip is available and extract the archive
-            execSync(`unzip -o ${artifactFilename} -d ${unzipDir}`);
-            core.info('Artifact downloaded and extracted successfully.');
+            const script = require('./.github/scripts/download-previous-artifact.js');
+            await script({ github, context, core });
 
       - name: Create or Update Posted Jobs File on Host
         # Ensure the posted_jobs.txt exists on the host for Docker cp to use.
@@ -159,16 +100,7 @@ jobs:
       - name: Run Pytest
         run: pytest
 
-      - name: Cache Posted Jobs File
-        # Caches the 'posted_jobs.txt' file across workflow runs. This is critical for
-        # maintaining the history of sent jobs and preventing duplicate notifications.
-        id: cache-posted-jobs
-        uses: actions/cache@v4
-        with:
-          path: posted_jobs.txt # The file to cache on the runner's filesystem.
-          key: ${{ runner.os }}-posted-jobs # Unique key for the cache, incorporating OS for specificity.
-          restore-keys: |
-            ${{ runner.os }}-posted-jobs # Ensures cache restoration even if the exact key doesn't match.
+      
 
       - name: Set up Docker Buildx
         # Initializes Docker Buildx, enhancing Docker build capabilities (e.g., for multi-platform builds, caching).
