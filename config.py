@@ -34,7 +34,11 @@ class WebsiteConfig:
     )
     WUZZUF_URL_IT = os.getenv(
         "WUZZUF_URL_IT",
-        "https://wuzzuf.net/search/jobs/?a=navbg&filters%5Bpost_date%5D%5B0%5D=within_1_week&q=it",
+        "https://wuzzuf.net/search/jobs/?a=navbg&filters%5Bpost_date%5D%5B0%5D=within_24_hours&q=it",
+    )
+    WUZZUF_URL_DEVELOPER = os.getenv(
+        "WUZZUF_URL_DEVELOPER",
+        "https://wuzzuf.net/search/jobs/?a=navbg&filters%5Bpost_date%5D%5B0%5D=within_24_hours&q=developer",
     )
     WUZZUF_JOB_CARD_SELECTOR = os.getenv(
         "WUZZUF_JOB_CARD_SELECTOR", "div.css-ghe2tq.e1v1l3u10"
@@ -179,7 +183,7 @@ WEBDRIVER_SETTINGS = {
 
 WEBSITE_CONFIGS = [
     {
-        "name": "Wuzzuf",
+        "name": "DevOps",
         "url": WebsiteConfig.WUZZUF_URL,
         "job_card_selector": WebsiteConfig.WUZZUF_JOB_CARD_SELECTOR,
         "title_selector": WebsiteConfig.WUZZUF_TITLE_SELECTOR,
@@ -189,8 +193,18 @@ WEBSITE_CONFIGS = [
         "date_selector": WebsiteConfig.WUZZUF_DATE_SELECTOR,
     },
     {
-        "name": "Wuzzuf IT",
+        "name": "IT",
         "url": WebsiteConfig.WUZZUF_URL_IT,
+        "job_card_selector": WebsiteConfig.WUZZUF_JOB_CARD_SELECTOR,
+        "title_selector": WebsiteConfig.WUZZUF_TITLE_SELECTOR,
+        "link_selector": WebsiteConfig.WUZZUF_LINK_SELECTOR,
+        "description_selector": WebsiteConfig.WUZZUF_DESCRIPTION_SELECTOR,
+        "tags_selector": WebsiteConfig.WUZZUF_TAGS_SELECTOR,
+        "date_selector": WebsiteConfig.WUZZUF_DATE_SELECTOR,
+    },
+    {
+        "name": "Wuzzuf Developer",
+        "url": WebsiteConfig.WUZZUF_URL_DEVELOPER,
         "job_card_selector": WebsiteConfig.WUZZUF_JOB_CARD_SELECTOR,
         "title_selector": WebsiteConfig.WUZZUF_TITLE_SELECTOR,
         "link_selector": WebsiteConfig.WUZZUF_LINK_SELECTOR,
