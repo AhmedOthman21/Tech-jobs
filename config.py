@@ -38,7 +38,7 @@ class WebsiteConfig:
     )
     WUZZUF_URL_DEVELOPER = os.getenv(
         "WUZZUF_URL_DEVELOPER",
-        "https://wuzzuf.net/search/jobs/?a=navbg&filters%5Bpost_date%5D%5B0%5D=within_24_hours"
+        "https://wuzzuf.net/search/jobs/?a=navbg%7Cspbg&filters%5Bpost_date%5D%5B0%5D=within_24_hours&q=developer"
         "&q=developer",
     )
     WUZZUF_JOB_CARD_SELECTOR = os.getenv(
